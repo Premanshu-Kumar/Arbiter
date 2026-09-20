@@ -294,7 +294,7 @@ MIT License. See `LICENSE` for details.
 
 **Premanshu**
 B.Tech Data Science, Lovely Professional University
-GitHub: [@your-username](https://github.com/your-username)
+GitHub: [@Premanshu-Kumar](https://github.com/Premanshu-Kumar)
 
 ---
 
