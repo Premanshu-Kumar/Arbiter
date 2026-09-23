@@ -841,6 +841,10 @@ git checkout -b feature/your-feature
 
 Make your changes, add tests, and submit a pull request.
 
+## 👥 Contributors
+
+* **Cloud**
+
 ---
 
 # 📄 License
