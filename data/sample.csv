@@ -1,0 +1,21 @@
+order_date,customer_id,category,product,quantity,revenue
+2024-01-15,C001,Electronics,Laptop,1,1200
+2024-01-16,C002,Electronics,Mouse,2,40
+2024-01-17,C003,Furniture,Chair,1,150
+2024-01-18,C001,Electronics,Keyboard,1,80
+2024-01-19,C004,Furniture,Desk,1,300
+2024-01-20,C002,Electronics,Monitor,1,250
+2024-01-21,C005,Office,Notebook,5,25
+2024-01-22,C003,Furniture,Table,1,200
+2024-01-23,C001,Electronics,Headphones,1,100
+2024-01-24,C006,Office,Pens,10,15
+2024-02-01,C002,Electronics,USB Cable,3,30
+2024-02-02,C004,Furniture,Bookshelf,1,180
+2024-02-03,C005,Office,Stapler,2,20
+2024-02-04,C007,Electronics,Webcam,1,75
+2024-02-05,C001,Electronics,Speakers,1,120
+2024-02-06,C003,Furniture,Lamp,1,45
+2024-02-07,C006,Office,Paper,20,40
+2024-02-08,C002,Electronics,Tablet,1,400
+2024-02-09,C004,Furniture,Cabinet,1,250
+2024-02-10,C005,Office,Calculator,1,35
