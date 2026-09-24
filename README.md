@@ -1,4 +1,6 @@
 Multi-Agent-Data-Analyst
+
+
 🤖 Multi-Agent Data Analyst
 > **A Jev-powered, local-first AI data analyst that combines fast decision-making with local LLMs to analyze CSV and Excel files.**
 Ask questions about your data in plain English. The system automatically profiles the dataset, decides the best analysis strategy, generates SQL or Python using a local LLM, executes it safely, validates the result, creates visualizations, and generates a complete analytical report.
