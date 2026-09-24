@@ -787,6 +787,1333 @@ This can help determine where a specialized decision model provides an advantage
 * [ ] Jev vs LLM benchmarking
 * [ ] Model performance dashboard
 
+## Phase 8 — Excel & Google Sheets Integration
+
+### Goal
+
+Extend the Multi-Agent Data Analyst from file-upload based analysis to direct spreadsheet workflows, allowing users to analyze, transform, visualize, and export spreadsheet data.
+
+### Excel Support
+
+Phase 8 will expand the existing Excel support with:
+
+* [ ] Multi-sheet Excel workbooks
+* [ ] Sheet selection
+* [ ] Multi-sheet analysis
+* [ ] Excel result export
+* [ ] Summary and insights sheets
+* [ ] Chart/result export
+
+Supported formats:
+
+```text
+.xlsx
+.xls
+.csv
+```
+
+Example workbook:
+
+```text
+sales.xlsx
+│
+├── Sales
+├── Customers
+├── Products
+└── Regions
+```
+
+### Google Sheets Integration
+
+Add the ability to connect a Google Spreadsheet and use it as a data source.
+
+```text
+Google Account
+      ↓
+Google Sheets
+      ↓
+Select Spreadsheet
+      ↓
+Select Sheet
+      ↓
+Data Profiler
+      ↓
+Jev
+      ↓
+LangGraph
+      ↓
+Agents
+      ↓
+Analysis
+```
+
+Planned capabilities:
+
+* [ ] Google OAuth authentication
+* [ ] Spreadsheet selection
+* [ ] Sheet selection
+* [ ] Read spreadsheet data
+* [ ] Analyze spreadsheet data
+* [ ] Create an analysis sheet
+* [ ] Write results back to Google Sheets
+
+### Excel Add-in
+
+As an advanced extension, provide an AI analyst directly inside Microsoft Excel.
+
+```text
+Microsoft Excel
+      ↓
+Excel Add-in
+      ↓
+AI Analyst
+      ↓
+Jev
+      ↓
+LangGraph
+      ↓
+SQL / Python / Visualization Agents
+      ↓
+Results
+      ↓
+Excel
+```
+
+Planned technologies:
+
+```text
+Office.js
+TypeScript
+React
+Microsoft Excel JavaScript API
+```
+
+### Spreadsheet Workflow
+
+```text
+Excel / Google Sheets
+          ↓
+      Data Import
+          ↓
+     Data Profiling
+          ↓
+          Jev
+          ↓
+      LangGraph
+          ↓
+   ┌──────┴──────┐
+   ↓             ↓
+ SQL Agent   Python Agent
+   ↓             ↓
+ DuckDB        Pandas
+   └──────┬──────┘
+          ↓
+   Visualization
+          ↓
+      Validation
+          ↓
+       Insights
+          ↓
+        Report
+          ↓
+ Excel / Google Sheets
+```
+
+### Example Questions
+
+Users should be able to ask questions such as:
+
+> Which region generated the highest profit?
+
+> Show the monthly revenue trend.
+
+> Find the top 20 customers by sales.
+
+> Identify missing and duplicate records.
+
+> Create a chart showing sales by region.
+
+> Analyze why revenue decreased in the last quarter.
+
+### Phase 8 Success Criteria
+
+Phase 8 will be considered complete when a user can:
+
+1. Upload an Excel workbook or connect Google Sheets.
+2. Select one or more sheets.
+3. Ask a natural-language question.
+4. Let Jev select the analysis strategy.
+5. Execute the analysis through the existing agent workflow.
+6. View tables, charts, and insights.
+7. Export or write results back to the spreadsheet.
+
+This phase keeps the existing **Jev + Local LLM + LangGraph** architecture while extending the project into practical spreadsheet workflows.
+
+---
+
+## Phase 8 — Spreadsheet Integration
+
+* [ ] Multi-sheet Excel support
+* [ ] Excel sheet selection
+* [ ] Multi-sheet analysis
+* [ ] Excel result export
+* [ ] Summary and insights sheets
+* [ ] Chart/result export
+* [ ] Google Sheets integration
+* [ ] Google OAuth authentication
+* [ ] Google Sheets data retrieval
+* [ ] Google Sheets result write-back
+* [ ] Excel Add-in
+* [ ] Office.js integration
+* [ ] Spreadsheet analysis workflow
+* [ ] Natural-language spreadsheet queries
+* [ ] Spreadsheet visualization and reporting
+
+# Phase 9 — Advanced Analytics & Machine Learning
+
+### Goal
+
+Extend the Multi-Agent Data Analyst from descriptive and diagnostic analysis into **predictive and advanced analytical workflows**.
+
+Phase 9 allows the system to automatically identify when a question requires machine learning, statistical analysis, forecasting, anomaly detection, or other advanced analytical methods.
+
+The existing architecture remains unchanged:
+
+```text
+User
+ ↓
+Data Profiler
+ ↓
+Jev
+ ↓
+LangGraph
+ ↓
+ML / Analytics Agent
+ ↓
+Local LLM
+ ↓
+Sandbox
+ ↓
+Validator
+ ↓
+Insights + Visualization
+```
+
+---
+
+## 🧠 Advanced Analytics Agent
+
+Introduce an analytics/ML agent responsible for selecting and executing advanced analytical methods.
+
+Possible tasks:
+
+* [ ] Predictive analytics
+* [ ] Time-series forecasting
+* [ ] Anomaly detection
+* [ ] Regression
+* [ ] Classification
+* [ ] Clustering
+* [ ] Correlation analysis
+* [ ] Feature engineering
+* [ ] Statistical analysis
+* [ ] Automated model selection
+
+---
+
+## 📈 Predictive Analytics
+
+The system should understand questions such as:
+
+> Predict next month's revenue.
+
+> Forecast sales for the next 6 months.
+
+> Which customers are likely to churn?
+
+Example workflow:
+
+```text
+Dataset
+   ↓
+Jev
+   ↓
+Identify Prediction Task
+   ↓
+ML Agent
+   ↓
+Feature Engineering
+   ↓
+Model Selection
+   ↓
+Model Training
+   ↓
+Validation
+   ↓
+Prediction
+   ↓
+Visualization
+   ↓
+Report
+```
+
+---
+
+## 📊 Forecasting
+
+Support time-series forecasting for suitable datasets.
+
+Example:
+
+```text
+Historical Data
+      ↓
+Time-Series Detection
+      ↓
+Feature Preparation
+      ↓
+Forecasting Model
+      ↓
+Future Predictions
+      ↓
+Chart + Insights
+```
+
+Possible outputs:
+
+* Historical trend
+* Forecasted values
+* Prediction intervals
+* Trend analysis
+* Forecast visualization
+
+---
+
+## 🚨 Anomaly Detection
+
+The system should identify unusual observations.
+
+Example:
+
+> Find unusual transactions in my sales data.
+
+Workflow:
+
+```text
+Dataset
+   ↓
+Jev
+   ↓
+Anomaly Detection
+   ↓
+Feature Selection
+   ↓
+Model / Statistical Method
+   ↓
+Anomalies
+   ↓
+Visualization
+   ↓
+Explanation
+```
+
+Possible methods:
+
+```text
+Statistical thresholds
+Isolation Forest
+Local Outlier Factor
+Clustering-based detection
+```
+
+---
+
+## 📉 Regression
+
+Support regression tasks such as:
+
+> Predict house price from the available features.
+
+Possible workflow:
+
+```text
+Dataset
+   ↓
+Feature Engineering
+   ↓
+Train/Test Split
+   ↓
+Regression Model
+   ↓
+Validation
+   ↓
+Prediction
+   ↓
+Metrics
+```
+
+Possible models:
+
+```text
+Linear Regression
+Random Forest
+Gradient Boosting
+XGBoost
+LightGBM
+```
+
+---
+
+## 🏷️ Classification
+
+Support classification questions such as:
+
+> Predict whether a customer is likely to churn.
+
+Possible models:
+
+```text
+Logistic Regression
+Decision Tree
+Random Forest
+Gradient Boosting
+XGBoost
+LightGBM
+```
+
+Evaluation metrics:
+
+```text
+Accuracy
+Precision
+Recall
+F1 Score
+ROC-AUC
+Confusion Matrix
+```
+
+---
+
+## 🔵 Clustering
+
+Support unsupervised analysis such as:
+
+> Segment customers based on purchasing behavior.
+
+Possible methods:
+
+```text
+K-Means
+Hierarchical Clustering
+DBSCAN
+```
+
+Possible outputs:
+
+* Customer segments
+* Cluster sizes
+* Cluster characteristics
+* Visualization
+* Segment descriptions
+
+---
+
+## 🧪 Model Validation
+
+Every ML workflow should include validation.
+
+```text
+Data
+ ↓
+Train
+ ↓
+Validation
+ ↓
+Evaluation
+ ↓
+Model Check
+ ↓
+Prediction
+```
+
+The system should report appropriate metrics rather than presenting predictions without context.
+
+---
+
+## 🧠 Jev + ML Routing
+
+Jev should determine whether a question requires:
+
+```text
+SQL
+Python
+SQL + Python
+Visualization
+Machine Learning
+Forecasting
+Anomaly Detection
+```
+
+Example:
+
+```json
+{
+  "method": "ML",
+  "task": "forecasting",
+  "target": "revenue",
+  "time_column": "date",
+  "validation": true
+}
+```
+
+---
+
+## 📊 ML Visualization
+
+Automatically generate appropriate visualizations.
+
+Examples:
+
+```text
+Forecast → Line Chart
+Classification → Confusion Matrix
+Regression → Actual vs Predicted
+Clustering → Scatter Plot
+Anomaly Detection → Highlighted Time Series
+```
+
+---
+
+## 📄 ML Report
+
+The Report Agent should include:
+
+* Problem definition
+* Dataset information
+* Features used
+* Method selected
+* Model used
+* Evaluation metrics
+* Predictions
+* Visualizations
+* Important findings
+* Limitations
+
+Example:
+
+```text
+Machine Learning Report
+────────────────────────
+
+Problem:
+Revenue Forecasting
+
+Model:
+[Selected Model]
+
+Validation:
+[Metrics]
+
+Forecast:
+[Chart]
+
+Key Insights:
+[Generated Insights]
+```
+
+---
+
+## 🔐 ML Safety
+
+ML-generated code must continue to pass through the existing security architecture:
+
+```text
+LLM Generated Code
+       ↓
+AST Validation
+       ↓
+Safety Policy
+       ↓
+Sandbox
+       ↓
+Execution
+       ↓
+Validator
+```
+
+---
+
+## 🧪 Phase 9 Testing
+
+* [ ] Regression tests
+* [ ] Classification tests
+* [ ] Forecasting tests
+* [ ] Clustering tests
+* [ ] Anomaly detection tests
+* [ ] Feature engineering tests
+* [ ] Model validation tests
+* [ ] Prediction validation
+* [ ] Visualization tests
+* [ ] ML report tests
+
+---
+
+## Phase 9 Success Criteria
+
+Phase 9 will be considered complete when the system can:
+
+1. Detect when a question requires advanced analytics.
+2. Select an appropriate ML/analytics workflow.
+3. Prepare the dataset.
+4. Train or execute the selected analytical method.
+5. Validate the result.
+6. Generate appropriate visualizations.
+7. Explain the results in natural language.
+8. Include the analysis in the final report.
+
+---
+
+## Phase 9 Roadmap
+
+* [ ] Advanced Analytics Agent
+* [ ] Feature Engineering
+* [ ] Regression
+* [ ] Classification
+* [ ] Clustering
+* [ ] Anomaly Detection
+* [ ] Forecasting
+* [ ] Automated Model Selection
+* [ ] Model Validation
+* [ ] ML Visualization
+* [ ] ML Reports
+* [ ] ML Evaluation Suite
+
+# Phase 10 — Production, Deployment & SaaS
+
+### Goal
+
+Transform the Multi-Agent Data Analyst from a development project into a **production-ready application** that can be deployed and used by multiple users.
+
+The architecture evolves from:
+
+```text
+Local Development
+      ↓
+Production Application
+      ↓
+Cloud Deployment
+      ↓
+Multi-User Platform
+```
+
+---
+
+## 🏗️ Production Architecture
+
+```text
+                         USERS
+                           │
+                           ▼
+                    Web Application
+                           │
+                           ▼
+                     API Gateway
+                           │
+                ┌──────────┴──────────┐
+                ▼                     ▼
+             FastAPI              Authentication
+                │
+                ▼
+             LangGraph
+                │
+        ┌───────┼────────┐
+        ▼       ▼        ▼
+      Jev     Agents    ML
+                │
+        ┌───────┼────────┐
+        ▼       ▼        ▼
+     DuckDB   Database  Sandbox
+                │
+                ▼
+             Storage
+                │
+                ▼
+           Reports / Files
+```
+
+---
+
+## 🌐 Web Application
+
+Move beyond the development Streamlit interface toward a production web application.
+
+Potential frontend:
+
+```text
+React
+TypeScript
+Next.js
+```
+
+Backend:
+
+```text
+FastAPI
+Python
+```
+
+Features:
+
+* [ ] User dashboard
+* [ ] File upload
+* [ ] Data preview
+* [ ] Chat interface
+* [ ] Analysis history
+* [ ] Charts
+* [ ] Reports
+* [ ] Project management
+* [ ] Settings
+
+---
+
+## 🔐 Authentication
+
+Add secure user authentication.
+
+Possible features:
+
+* [ ] User registration
+* [ ] Login
+* [ ] Logout
+* [ ] Password security
+* [ ] Session management
+* [ ] OAuth
+* [ ] Role-based access
+* [ ] API authentication
+
+Possible roles:
+
+```text
+Admin
+User
+Team Member
+```
+
+---
+
+## 👥 Multi-User Support
+
+Allow multiple users to use the platform independently.
+
+```text
+User
+ ↓
+Workspace
+ ↓
+Projects
+ ↓
+Datasets
+ ↓
+Analyses
+ ↓
+Reports
+```
+
+Each user's data should remain isolated from other users.
+
+---
+
+## 📁 Project Management
+
+Users should be able to create projects.
+
+Example:
+
+```text
+My Projects
+│
+├── Sales Analysis
+│   ├── sales.xlsx
+│   ├── analyses
+│   └── reports
+│
+├── Customer Analytics
+│   ├── customers.csv
+│   └── reports
+│
+└── Revenue Forecast
+    ├── revenue.xlsx
+    └── models
+```
+
+---
+
+## 💾 Database
+
+Introduce a production database for application state.
+
+Potential technology:
+
+```text
+PostgreSQL
+```
+
+Possible entities:
+
+```text
+Users
+Projects
+Datasets
+Analyses
+Queries
+Reports
+Models
+API Keys
+Audit Events
+```
+
+---
+
+## ☁️ File Storage
+
+Large datasets and generated reports should use dedicated storage.
+
+Possible options:
+
+```text
+Object Storage
+S3-compatible storage
+Cloud storage
+```
+
+Store:
+
+```text
+Uploaded datasets
+Generated reports
+Charts
+ML models
+Analysis artifacts
+```
+
+---
+
+## 🐳 Production Docker
+
+Containerize the application.
+
+Example:
+
+```text
+Docker
+│
+├── Frontend
+├── Backend
+├── Worker
+├── Database
+└── Sandbox
+```
+
+Production execution should keep AI-generated code isolated from the main application.
+
+---
+
+## ⚙️ Background Jobs
+
+Long-running analyses should not block the main web server.
+
+Example:
+
+```text
+User Request
+     ↓
+FastAPI
+     ↓
+Job Queue
+     ↓
+Worker
+     ↓
+LangGraph
+     ↓
+Analysis
+     ↓
+Result
+```
+
+Possible tasks:
+
+* Large dataset analysis
+* ML training
+* Forecasting
+* Report generation
+* Scheduled analysis
+
+---
+
+## 📊 Monitoring
+
+Add monitoring for:
+
+```text
+API latency
+Agent execution time
+LLM latency
+Jev latency
+Model errors
+Sandbox failures
+Database errors
+Failed analyses
+```
+
+Track:
+
+```text
+Requests
+Errors
+Retries
+Token/model usage
+Execution time
+Resource usage
+```
+
+---
+
+## 📝 Logging
+
+Create structured logs for important events.
+
+Example:
+
+```text
+Request Started
+      ↓
+Dataset Loaded
+      ↓
+Jev Decision
+      ↓
+Agent Selected
+      ↓
+Code Generated
+      ↓
+Sandbox Executed
+      ↓
+Validation
+      ↓
+Report Generated
+```
+
+Sensitive data should not be unnecessarily written to logs.
+
+---
+
+## 🔐 Production Security
+
+Security becomes a major requirement.
+
+Implement:
+
+* [ ] Authentication
+* [ ] Authorization
+* [ ] Input validation
+* [ ] Rate limiting
+* [ ] Secure file handling
+* [ ] Sandbox isolation
+* [ ] Network restrictions
+* [ ] Secret management
+* [ ] API key protection
+* [ ] Audit logging
+* [ ] Data isolation
+
+Generated code must continue to be treated as untrusted.
+
+```text
+Generated Code
+      ↓
+Safety Validation
+      ↓
+Restricted Sandbox
+      ↓
+Resource Limits
+      ↓
+Execution
+```
+
+---
+
+## 🔑 API Management
+
+Provide an API for external applications.
+
+Example:
+
+```text
+POST /api/analyze
+POST /api/datasets
+GET  /api/projects
+GET  /api/analyses
+GET  /api/reports
+```
+
+Possible integrations:
+
+```text
+Excel
+Google Sheets
+Power BI
+Custom Applications
+Internal Tools
+```
+
+---
+
+## 📊 Usage & Quotas
+
+For a multi-user platform, track resource usage.
+
+Possible limits:
+
+```text
+Files per project
+Maximum file size
+Analyses per day
+Execution time
+ML training resources
+Storage
+API requests
+```
+
+---
+
+## 💳 SaaS Layer
+
+The application can eventually support subscription-based plans.
+
+Example structure:
+
+```text
+Free
+│
+├── Limited analyses
+├── Smaller datasets
+└── Basic reports
+
+Pro
+│
+├── Larger datasets
+├── Advanced analytics
+├── More analyses
+└── Advanced reports
+
+Team
+│
+├── Shared workspaces
+├── Team members
+├── Collaboration
+└── Higher limits
+```
+
+The exact pricing and limits should be determined separately when the production business model is defined.
+
+---
+
+## 🔌 Integrations
+
+Production version can expose integrations for:
+
+```text
+Excel
+Google Sheets
+Power BI
+Databases
+REST APIs
+Cloud Storage
+```
+
+Example:
+
+```text
+External Application
+        ↓
+     API
+        ↓
+   Multi-Agent
+   Data Analyst
+        ↓
+     Analysis
+        ↓
+     Results
+```
+
+---
+
+## 📈 Production Analytics
+
+Track platform-level metrics:
+
+```text
+Total users
+Active users
+Total analyses
+Successful analyses
+Failed analyses
+Average analysis time
+Average retries
+Most-used agents
+Most-used models
+```
+
+These metrics should be collected without exposing users' private dataset contents.
+
+---
+
+## 🧪 Production Testing
+
+Add:
+
+* [ ] Unit tests
+* [ ] Integration tests
+* [ ] API tests
+* [ ] Authentication tests
+* [ ] Security tests
+* [ ] Sandbox tests
+* [ ] Load tests
+* [ ] End-to-end tests
+* [ ] Spreadsheet integration tests
+* [ ] ML workflow tests
+
+---
+
+## 🚀 Deployment
+
+Possible deployment architecture:
+
+```text
+                         Internet
+                            │
+                            ▼
+                       Load Balancer
+                            │
+                            ▼
+                       Frontend
+                            │
+                            ▼
+                         FastAPI
+                            │
+                ┌───────────┼───────────┐
+                ▼           ▼           ▼
+            LangGraph     Worker     Database
+                │
+        ┌───────┼────────┐
+        ▼       ▼        ▼
+       Jev    Ollama   Sandbox
+```
+
+Potential deployment environments:
+
+```text
+Docker
+Cloud VM
+Managed Container Platform
+Kubernetes
+```
+
+Local deployment should remain available for privacy-focused users.
+
+---
+
+## 🌍 Deployment Modes
+
+### Local Mode
+
+```text
+User Computer
+│
+├── Streamlit / Web UI
+├── Ollama
+├── Local Data
+├── DuckDB
+└── Docker Sandbox
+```
+
+### Cloud Mode
+
+```text
+Cloud
+│
+├── Frontend
+├── FastAPI
+├── LangGraph
+├── Jev
+├── Database
+├── Storage
+└── Sandbox
+```
+
+### Hybrid Mode
+
+```text
+User
+ ↓
+Cloud Application
+ ↓
+Decision / Orchestration
+ ↓
+Local Data / Local LLM
+```
+
+The exact deployment model depends on privacy, infrastructure, and operational requirements.
+
+---
+
+## 📦 CI/CD
+
+Set up automated development and deployment workflows.
+
+Example:
+
+```text
+Git Push
+   ↓
+CI
+   ↓
+Tests
+   ↓
+Security Checks
+   ↓
+Build Docker Image
+   ↓
+Deploy
+```
+
+Potential tooling:
+
+```text
+GitHub Actions
+Docker
+Container Registry
+```
+
+---
+
+## 🔄 Production Self-Healing
+
+The existing self-healing architecture should continue to operate in production.
+
+```text
+Request
+ ↓
+Jev
+ ↓
+Agent
+ ↓
+Execution
+ ↓
+Validation
+ ↓
+ ┌─────────────┐
+ │             │
+PASS          FAIL
+ │             │
+ ↓             ↓
+Result       Retry
+               ↓
+             Agent
+```
+
+Production safeguards should limit retries and resource consumption.
+
+---
+
+## 📄 Production Reports
+
+Users should be able to:
+
+* [ ] View reports online
+* [ ] Download PDF
+* [ ] Download HTML
+* [ ] Download Markdown
+* [ ] Export Excel
+* [ ] Share reports
+* [ ] Save report history
+
+---
+
+## 🧑‍💻 Developer API
+
+Provide documentation for developers.
+
+Example:
+
+```text
+POST /api/v1/analyze
+```
+
+Request:
+
+```json
+{
+  "dataset_id": "dataset_123",
+  "question": "Which region has the highest revenue?"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "completed",
+  "answer": "North",
+  "visualization": "chart_url",
+  "report": "report_url"
+}
+```
+
+---
+
+## 🧪 Phase 10 Success Criteria
+
+Phase 10 will be considered complete when the system can:
+
+1. Support authenticated users.
+2. Manage projects and datasets.
+3. Run analyses through a production API.
+4. Execute AI-generated code safely.
+5. Store analysis history.
+6. Generate and store reports.
+7. Support monitoring and logging.
+8. Handle multiple users.
+9. Provide API access.
+10. Run through a reproducible deployment process.
+11. Maintain secure data isolation.
+12. Support local, cloud, or hybrid deployment.
+
+---
+
+## Phase 10 Roadmap
+
+* [ ] Production frontend
+* [ ] FastAPI backend
+* [ ] Authentication
+* [ ] Authorization
+* [ ] PostgreSQL
+* [ ] File/object storage
+* [ ] Project management
+* [ ] Multi-user support
+* [ ] Background workers
+* [ ] Docker production setup
+* [ ] Monitoring
+* [ ] Structured logging
+* [ ] Rate limiting
+* [ ] API management
+* [ ] Usage quotas
+* [ ] Developer API
+* [ ] CI/CD
+* [ ] Production testing
+* [ ] Cloud deployment
+* [ ] Local deployment
+* [ ] Hybrid deployment
+* [ ] SaaS capabilities
+
+
 ---
 
 # ⚠️ Limitations
