@@ -116,7 +116,7 @@ try:
         query = "SELECT category, SUM(value) as total_value FROM data GROUP BY category"
         result = executor.execute_query(query)
         print(f"✅ Query execution: {result['success']} (expected True)")
-        if result['success']:
+        if result.get('success') is True:
             print(f"   - Result rows: {result['row_count']}")
             print(f"   - Result columns: {result['column_count']}")
         
@@ -150,7 +150,7 @@ try:
         sql_query = "SELECT category, AVG(value) as avg_value FROM data GROUP BY category"
         result = safe_executor.execute_sql(sql_query)
         print(f"✅ SQL execution: {result['success']} (expected True)")
-        if result['success']:
+        if result.get('success') is True:
             print(f"   - Result type: {type(result['result'])}")
             print(f"   - Result preview: {result['result'].head() if hasattr(result['result'], 'head') else result['result']}")
         else:
@@ -160,7 +160,7 @@ try:
         python_code = "result = df.groupby('category')['value'].mean()\nprint(result)"
         result = safe_executor.execute_python(python_code, sample_data)
         print(f"✅ Python execution: {result['success']} (expected True)")
-        if result['success']:
+        if result.get('success') is True:
             print(f"   - Result: {result['result']}")
         else:
             print(f"   - Error: {result.get('error', 'Unknown')}")

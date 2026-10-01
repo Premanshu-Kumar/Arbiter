@@ -43,6 +43,17 @@ class SQLAgent:
             # Clean and validate the generated SQL
             cleaned_sql = self._clean_sql(sql_code)
             
+            # Additional validation for empty SQL
+            if not cleaned_sql or not cleaned_sql.strip():
+                return {
+                    "code": "",
+                    "code_type": "sql",
+                    "method": "SQL",
+                    "success": False,
+                    "error": "Generated SQL is empty",
+                    "reasoning": "SQL generation returned empty code"
+                }
+            
             return {
                 "code": cleaned_sql,
                 "code_type": "sql",
@@ -59,6 +70,57 @@ class SQLAgent:
                 "success": False,
                 "error": str(e),
                 "reasoning": f"SQL generation failed: {str(e)}"
+            }
+    
+    def generate_sql_mock(self, question: str, schema: str, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """Mock SQL generation for testing without Ollama"""
+        # Simple rule-based SQL generation as fallback
+        question_lower = question.lower()
+        schema_str = str(schema).lower() if schema is not None else ""
+        
+        if "average" in question_lower or "mean" in question_lower:
+            # Find numeric column
+            if "value" in schema_str:
+                return {
+                    "code": "SELECT category, AVG(value) as avg_value FROM data GROUP BY category",
+                    "code_type": "sql",
+                    "method": "SQL",
+                    "success": True,
+                    "reasoning": "Generated SQL for average calculation"
+                }
+        elif "sum" in question_lower or "total" in question_lower:
+            if "value" in schema_str:
+                return {
+                    "code": "SELECT category, SUM(value) as total_value FROM data GROUP BY category",
+                    "code_type": "sql",
+                    "method": "SQL",
+                    "success": True,
+                    "reasoning": "Generated SQL for sum calculation"
+                }
+        elif "count" in question_lower:
+            return {
+                "code": "SELECT category, COUNT(*) as count FROM data GROUP BY category",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": "Generated SQL for count calculation"
+            }
+        elif "top" in question_lower:
+            return {
+                "code": "SELECT category, value FROM data ORDER BY value DESC LIMIT 3",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": "Generated SQL for top values"
+            }
+        else:
+            # Default SELECT
+            return {
+                "code": "SELECT * FROM data LIMIT 10",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": "Generated default SELECT query"
             }
     
     def _build_sql_prompt(
@@ -179,7 +241,7 @@ Provide a brief explanation of what the query does.
         for line in schema.split("\n"):
             if "-" in line and "(" in line:
                 col_name = line.split("-")[0].strip()
-                if col_name and not col_name.startswith("Column"):
+                if col_name is not None and col_name != "" and not col_name.startswith("Column"):
                     columns.append(col_name)
         
         # Simple keyword matching

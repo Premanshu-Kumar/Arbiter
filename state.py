@@ -2,6 +2,7 @@
 Shared state definition for LangGraph multi-agent system
 """
 from typing import TypedDict, Any, Optional
+import pandas as pd
 
 
 class AnalystState(TypedDict):
@@ -16,6 +17,10 @@ class AnalystState(TypedDict):
     row_count: int
     column_count: int
     missing_values: dict
+    data_types: dict
+    
+    # DataFrame for execution
+    df: Optional[pd.DataFrame]
     
     # Jev decisions
     decision: dict

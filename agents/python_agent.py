@@ -61,6 +61,45 @@ class PythonAgent:
                 "reasoning": f"Python generation failed: {str(e)}"
             }
     
+    def generate_python_mock(self, question: str, schema: str, plan: Dict[str, Any]) -> Dict[str, Any]:
+        """Mock Python generation for testing without Ollama"""
+        # Simple rule-based Python generation as fallback
+        question_lower = question.lower()
+        
+        if "average" in question_lower or "mean" in question_lower:
+            return {
+                "code": "result = df.groupby('category')['value'].mean()\nprint(result)",
+                "code_type": "python",
+                "method": "Python",
+                "success": True,
+                "reasoning": "Generated Python for average calculation"
+            }
+        elif "sum" in question_lower or "total" in question_lower:
+            return {
+                "code": "result = df.groupby('category')['value'].sum()\nprint(result)",
+                "code_type": "python",
+                "method": "Python",
+                "success": True,
+                "reasoning": "Generated Python for sum calculation"
+            }
+        elif "count" in question_lower:
+            return {
+                "code": "result = df.groupby('category').size()\nprint(result)",
+                "code_type": "python",
+                "method": "Python",
+                "success": True,
+                "reasoning": "Generated Python for count calculation"
+            }
+        else:
+            # Default operation
+            return {
+                "code": "result = df.head(10)\nprint(result)",
+                "code_type": "python",
+                "method": "Python",
+                "success": True,
+                "reasoning": "Generated default Python code"
+            }
+    
     def _build_python_prompt(
         self,
         question: str,

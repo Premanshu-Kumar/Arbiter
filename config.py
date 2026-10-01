@@ -14,8 +14,8 @@ JEV_MODEL = os.getenv("JEV_MODEL", "jev-1")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # Model Configuration
-CODER_MODEL = os.getenv("CODER_MODEL", "qwen3-coder")
-REASONING_MODEL = os.getenv("REASONING_MODEL", "qwen3")
+CODER_MODEL = os.getenv("CODER_MODEL", "phi3:mini")
+REASONING_MODEL = os.getenv("REASONING_MODEL", "phi3:mini")
 
 # Execution Configuration
 MAX_RETRIES = 3

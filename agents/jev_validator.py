@@ -67,16 +67,18 @@ class JevValidator:
         if isinstance(result, pd.DataFrame):
             context["result_rows"] = len(result)
             context["result_columns"] = len(result.columns)
-            context["result_empty"] = len(result) == 0
-            context["has_nulls"] = result.isnull().any().any()
+            context["result_empty"] = result.empty
+            has_nulls_series = result.isnull().any()
+            context["has_nulls"] = has_nulls_series.any() if isinstance(has_nulls_series, pd.Series) else bool(has_nulls_series)
             
             # Check for numeric columns
             numeric_cols = result.select_dtypes(include=['number']).columns
             context["has_numeric"] = len(numeric_cols) > 0
             
             # Check for all NaN values
-            if context["has_numeric"]:
-                context["all_nan"] = result[numeric_cols].isnull().all().all()
+            if context.get("has_numeric") is True:
+                all_nan_series = result[numeric_cols].isnull().all()
+                context["all_nan"] = all_nan_series.all() if isinstance(all_nan_series, pd.Series) else bool(all_nan_series)
             
         elif isinstance(result, (dict, list)):
             context["result_type"] = "structured"
@@ -104,7 +106,7 @@ class JevValidator:
         }
         
         # Check for execution errors
-        if error:
+        if error is not None:
             validation["valid"] = False
             validation["should_retry"] = retry_count < config.MAX_RETRIES
             validation["decision"] = "RETRY" if validation["should_retry"] else "REJECT"
@@ -112,7 +114,7 @@ class JevValidator:
             return validation
         
         # Check for empty results
-        if isinstance(result, pd.DataFrame) and len(result) == 0:
+        if isinstance(result, pd.DataFrame) and result.empty:
             validation["valid"] = False
             validation["should_retry"] = retry_count < config.MAX_RETRIES
             validation["decision"] = "RETRY" if validation["should_retry"] else "ACCEPT"
@@ -122,12 +124,21 @@ class JevValidator:
         # Check for all NaN results
         if isinstance(result, pd.DataFrame):
             numeric_cols = result.select_dtypes(include=['number']).columns
-            if len(numeric_cols) > 0 and result[numeric_cols].isnull().all().all():
-                validation["valid"] = False
-                validation["should_retry"] = retry_count < config.MAX_RETRIES
-                validation["decision"] = "RETRY" if validation["should_retry"] else "ACCEPT"
-                validation["reasoning"] = "All numeric values are NaN - calculation may have failed"
-                return validation
+            if len(numeric_cols) > 0:
+                all_nan_series = result[numeric_cols].isnull().all()
+                if isinstance(all_nan_series, pd.Series):
+                    if all_nan_series.all():
+                        validation["valid"] = False
+                        validation["should_retry"] = retry_count < config.MAX_RETRIES
+                        validation["decision"] = "RETRY" if validation["should_retry"] else "ACCEPT"
+                        validation["reasoning"] = "All numeric values are NaN - calculation may have failed"
+                        return validation
+                elif bool(all_nan_series):
+                    validation["valid"] = False
+                    validation["should_retry"] = retry_count < config.MAX_RETRIES
+                    validation["decision"] = "RETRY" if validation["should_retry"] else "ACCEPT"
+                    validation["reasoning"] = "All numeric values are NaN - calculation may have failed"
+                    return validation
         
         # Check retry limits
         if retry_count >= config.MAX_RETRIES:

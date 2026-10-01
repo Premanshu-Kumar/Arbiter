@@ -120,7 +120,7 @@ try:
     
     print(f"✅ SQLAgent generated SQL code")
     print(f"   - Success: {sql_result['success']}")
-    if sql_result['success']:
+    if sql_result.get('success') is True:
         print(f"   - Code preview: {sql_result['code'][:100]}...")
         
         # Test validation
@@ -153,7 +153,7 @@ try:
     
     print(f"✅ PythonAgent generated Python code")
     print(f"   - Success: {python_result['success']}")
-    if python_result['success']:
+    if python_result.get('success') is True:
         print(f"   - Code preview: {python_result['code'][:100]}...")
         
         # Test validation
@@ -224,7 +224,7 @@ try:
     
     print(f"✅ ReportAgent generated report")
     print(f"   - Success: {report_result['success']}")
-    if report_result['success']:
+    if report_result.get('success') is True:
         print(f"   - Executive Summary: {report_result['executive_summary'][:100]}...")
         print(f"   - Key Insights Count: {len(report_result['key_insights'])}")
     

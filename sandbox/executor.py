@@ -91,7 +91,7 @@ class SafeExecutor:
     
     def _execute_sql_internal(self, sql: str) -> pd.DataFrame:
         """Internal SQL execution"""
-        if not self.conn:
+        if self.conn is None:
             raise Exception("DuckDB connection not established")
         
         # Replace table name if needed (case-insensitive)
@@ -207,7 +207,7 @@ class SafeExecutor:
             exec(code, allowed_globals, {})
             
             # Try to return the last meaningful result
-            if output_buffer:
+            if len(output_buffer) > 0:
                 return output_buffer
             else:
                 return "Code executed successfully (no output)"
@@ -238,7 +238,7 @@ class SafeExecutor:
         if exception:
             raise exception[0]
         
-        return result[0] if result else None
+        return result[0] if len(result) > 0 else None
     
     def close(self):
         """Close database connection"""
@@ -328,7 +328,7 @@ class DuckDBExecutor:
         if exception:
             raise exception[0]
         
-        return result[0] if result else pd.DataFrame()
+        return result[0] if len(result) > 0 else pd.DataFrame()
     
     def get_table_info(self, table_name: str = "data") -> Dict[str, Any]:
         """Get information about the registered table"""

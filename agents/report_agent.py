@@ -128,7 +128,7 @@ Provide insights as a numbered list, focusing on actionable findings.
             insights = []
             for line in insights_text.split('\n'):
                 line = line.strip()
-                if line and (line[0].isdigit() or line.startswith('-')):
+                if line is not None and line != "" and (line[0].isdigit() or line.startswith('-')):
                     insights.append(line)
             
             return insights if insights else ["Analysis completed successfully"]
