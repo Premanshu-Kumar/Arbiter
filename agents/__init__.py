@@ -9,6 +9,8 @@ from .python_agent import PythonAgent
 from .viz_agent import VizAgent
 from .report_agent import ReportAgent
 from .jev_validator import JevValidator
+from .cross_validator import CrossValidator
+from .self_healer import SelfHealer
 
 __all__ = [
     'DataProfiler',
@@ -18,5 +20,7 @@ __all__ = [
     'PythonAgent',
     'VizAgent',
     'ReportAgent',
-    'JevValidator'
+    'JevValidator',
+    'CrossValidator',
+    'SelfHealer',
 ]

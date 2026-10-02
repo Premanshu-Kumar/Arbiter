@@ -763,12 +763,12 @@ This can help determine where a specialized decision model provides an advantage
 
 ## Phase 5 — Validation
 
-* [ ] Jev validator
-* [ ] Result validation
-* [ ] Empty-result detection
-* [ ] NaN detection
-* [ ] SQL/Pandas cross-check
-* [ ] Self-healing retries
+* [x] Jev validator
+* [x] Result validation
+* [x] Empty-result detection
+* [x] NaN detection
+* [x] SQL/Pandas cross-check
+* [x] Self-healing retries
 
 ## Phase 6 — UI
 

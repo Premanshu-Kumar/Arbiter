@@ -35,13 +35,26 @@ class AnalystState(TypedDict):
     result: Any
     error: Optional[str]
     
-    # Validation
+    # Validation (Phase 5 — enhanced)
     valid: bool
     validation_reason: str
+    validation_issues: list          # Critical issues found during validation
+    validation_warnings: list        # Non-critical warnings
+    quality_score: float             # 0.0–1.0 result quality score
+    validation_checks: dict          # Detailed check results (NaN %, outliers, etc.)
     
-    # Retry
+    # Cross-validation (Phase 5)
+    cross_check_performed: bool
+    cross_check_match: Optional[bool]
+    cross_check_confidence: float
+    cross_check_discrepancies: list
+    
+    # Retry / Self-healing (Phase 5 — enhanced)
     retry_count: int
     failed_agent: Optional[str]
+    heal_attempts: int               # Number of code-fix attempts in current cycle
+    last_error_category: Optional[str]  # fatal / syntax / data / runtime / timeout / switch
+    suggested_fixes: list            # Fix suggestions from the validator
     
     # Output
     charts: list[str]
