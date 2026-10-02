@@ -2188,6 +2188,18 @@ GitHub: **@Premanshu-Kumar**
 
 ---
 
+---
+
+# 👥 Contributors
+
+| Contributor | Role |
+|-------------|------|
+| <a href="https://github.com/Premanshu-Kumar"><img src="https://github.com/Premanshu-Kumar.png" width="50" height="50" style="border-radius:50%"></a> **[Premanshu Kumar](https://github.com/Premanshu-Kumar)** | 🧑‍💻 Project Creator & Lead Developer |
+| <a href="https://github.com/apps/devin-ai-integration"><img src="https://avatars.githubusercontent.com/in/932042?s=50&v=4" width="50" height="50" style="border-radius:50%"></a> **[Devin AI](https://github.com/apps/devin-ai-integration)** | 🤖 AI Pair Programmer |
+| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Anthropic_logo.svg/50px-Anthropic_logo.svg.png" width="50" height="50" style="border-radius:50%"> **Claude Code** | 🧠 AI Code Contributor — Phase 5 (Validation, Cross-Check, Self-Healing) |
+
+---
+
 # ⭐ Project Summary
 
 > **Ask your data anything. Jev decides the path. Local LLMs generate the solution. LangGraph orchestrates the workflow. The system validates, visualizes, and explains the answer.**
