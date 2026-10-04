@@ -3,6 +3,7 @@ LangGraph Workflow - Multi-agent orchestration for data analysis
 
 Phase 5: Adds cross-validation node, self-healing retry loop, and
 comprehensive validation routing.
+Phase 7: Adds performance recording integration.
 """
 from typing import TypedDict, Any, Optional, Literal
 from langgraph.graph import StateGraph, END
@@ -18,7 +19,9 @@ from agents.cross_validator import CrossValidator
 from agents.self_healer import SelfHealer
 from decision.validation_policies import ValidationPolicyEngine
 from sandbox.executor import SafeExecutor
+from eval.performance_dashboard import ModelPerformanceDashboard, PerformanceTimer
 import config
+import time
 
 
 class AnalystWorkflow:
@@ -625,7 +628,14 @@ class AnalystWorkflow:
     #  Public API
     # ==================================================================
     
-    def run(self, question: str, df: pd.DataFrame, schema: str, data_profile: dict) -> AnalystState:
+    def run(
+        self,
+        question: str,
+        df: pd.DataFrame,
+        schema: str,
+        data_profile: dict,
+        record_metrics: bool = True,
+    ) -> AnalystState:
         """Run the complete workflow"""
         initial_state: AnalystState = {
             "question": question,
@@ -665,15 +675,32 @@ class AnalystWorkflow:
             "insights": [],
             "report": "",
             "df": df,
+            # Phase 7 state
+            "datasets": {},
+            "joined_schema": None,
+            "eda_report": None,
+            "dataset_version_id": None,
+            "latency_ms": 0.0,
         }
         
         print("🚀 Starting Multi-Agent Analysis Workflow")
         print("=" * 50)
         
-        final_state = self.graph.invoke(initial_state)
+        with PerformanceTimer() as timer:
+            final_state = self.graph.invoke(initial_state)
+        
+        final_state["latency_ms"] = timer.elapsed_ms
         
         print("=" * 50)
-        print("✅ Workflow Complete")
+        print(f"✅ Workflow Complete ({timer.elapsed_ms:.0f}ms)")
+        
+        # Phase 7: Record performance metrics
+        if record_metrics:
+            try:
+                dashboard = ModelPerformanceDashboard()
+                dashboard.record(final_state, timer.elapsed_ms)
+            except Exception as e:
+                print(f"   Warning: Could not record metrics: {e}")
         
         return final_state
     

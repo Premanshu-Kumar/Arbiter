@@ -60,3 +60,17 @@ class AnalystState(TypedDict):
     charts: list[str]
     insights: list[str]
     report: str
+
+    # Phase 7 — Advanced
+    # Multi-file joins
+    datasets: dict                   # name -> registered dataset names
+    joined_schema: Optional[str]     # Schema of the joined result (if any)
+
+    # Automatic EDA
+    eda_report: Optional[dict]       # Full EDA report dict
+
+    # Dataset versioning
+    dataset_version_id: Optional[str]  # Version ID of the active dataset
+
+    # Performance tracking
+    latency_ms: float                # End-to-end latency for this run
