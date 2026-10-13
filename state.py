@@ -74,3 +74,18 @@ class AnalystState(TypedDict):
 
     # Performance tracking
     latency_ms: float                # End-to-end latency for this run
+
+    # Phase 8 — Spreadsheet Integration
+    # Excel multi-sheet
+    excel_sheet_name: Optional[str]    # Selected sheet name (for multi-sheet workbooks)
+    excel_sheet_names: list           # All available sheet names
+    multi_sheet_analysis: bool       # Whether analysis spans multiple sheets
+    
+    # Google Sheets
+    google_spreadsheet_id: Optional[str]  # Google Spreadsheet ID
+    google_sheet_name: Optional[str]     # Google Sheet name
+    google_authenticated: bool         # OAuth authentication status
+    
+    # Spreadsheet export
+    export_format: Optional[str]       # excel, google_sheets, etc.
+    export_path: Optional[str]         # Path where results were exported

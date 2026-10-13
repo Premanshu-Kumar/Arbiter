@@ -4,6 +4,7 @@ LangGraph Workflow - Multi-agent orchestration for data analysis
 Phase 5: Adds cross-validation node, self-healing retry loop, and
 comprehensive validation routing.
 Phase 7: Adds performance recording integration.
+Phase 8: Adds spreadsheet integration support.
 """
 from typing import TypedDict, Any, Optional, Literal
 from langgraph.graph import StateGraph, END
@@ -17,11 +18,16 @@ from agents.report_agent import ReportAgent
 from agents.jev_validator import JevValidator
 from agents.cross_validator import CrossValidator
 from agents.self_healer import SelfHealer
+from agents.excel_multi_sheet import ExcelMultiSheetHandler
+from agents.google_sheets_agent import GoogleSheetsIntegrator
+from agents.excel_addin import ExcelAddInIntegrator
+from agents.profiler import DataProfiler
 from decision.validation_policies import ValidationPolicyEngine
 from sandbox.executor import SafeExecutor
 from eval.performance_dashboard import ModelPerformanceDashboard, PerformanceTimer
 import config
 import time
+import os
 
 
 class AnalystWorkflow:
@@ -38,6 +44,10 @@ class AnalystWorkflow:
         self.self_healer = SelfHealer()
         self.policy = ValidationPolicyEngine()
         self.executor = SafeExecutor()
+        # Phase 8 spreadsheet handlers
+        self.excel_handler = ExcelMultiSheetHandler()
+        self.google_sheets = GoogleSheetsIntegrator()
+        self.excel_addin = ExcelAddInIntegrator()
         self.graph = self._build_graph()
     
     def _build_graph(self) -> StateGraph:
@@ -53,6 +63,10 @@ class AnalystWorkflow:
         workflow.add_node("cross_check", self._cross_check_node)
         workflow.add_node("visualization", self._visualization_node)
         workflow.add_node("report", self._report_node)
+        # Phase 8 nodes
+        workflow.add_node("excel_sheet_selection", self._excel_sheet_selection_node)
+        workflow.add_node("google_sheets_load", self._google_sheets_load_node)
+        workflow.add_node("spreadsheet_export", self._spreadsheet_export_node)
         
         # Set entry point
         workflow.set_entry_point("planner")
@@ -64,7 +78,8 @@ class AnalystWorkflow:
             {
                 "sql": "sql_agent",
                 "python": "python_agent",
-                "both": "sql_agent",  # Start with SQL for both
+                "excel_sheet": "excel_sheet_selection",
+                "google_sheets": "google_sheets_load",
                 "error": END
             }
         )
@@ -117,6 +132,28 @@ class AnalystWorkflow:
             }
         )
         
+        # Phase 8: After Excel sheet selection
+        workflow.add_conditional_edges(
+            "excel_sheet_selection",
+            self._route_to_agent,
+            {
+                "sql": "sql_agent",
+                "python": "python_agent",
+                "error": END
+            }
+        )
+        
+        # Phase 8: After Google Sheets load
+        workflow.add_conditional_edges(
+            "google_sheets_load",
+            self._route_to_agent,
+            {
+                "sql": "sql_agent",
+                "python": "python_agent",
+                "error": END
+            }
+        )
+        
         # After cross-check
         workflow.add_conditional_edges(
             "cross_check",
@@ -129,7 +166,8 @@ class AnalystWorkflow:
         )
         
         workflow.add_edge("visualization", "report")
-        workflow.add_edge("report", END)
+        workflow.add_edge("report", "spreadsheet_export")
+        workflow.add_edge("spreadsheet_export", END)
         
         return workflow.compile()
     
@@ -516,11 +554,145 @@ class AnalystWorkflow:
         return state
     
     # ==================================================================
+    #  Phase 8: Spreadsheet Integration Nodes
+    # ==================================================================
+    
+    def _excel_sheet_selection_node(self, state: AnalystState) -> AnalystState:
+        """Excel sheet selection node for multi-sheet workbooks"""
+        print("📊 Excel Handler: Selecting sheet...")
+        
+        try:
+            # Get sheet names from Excel file
+            profiler = DataProfiler()
+            sheet_names = profiler.get_excel_sheet_names(state["file_path"])
+            
+            if len(sheet_names) > 1:
+                # Multi-sheet workbook
+                state["excel_sheet_names"] = sheet_names
+                state["excel_sheet_name"] = sheet_names[0]  # Default to first sheet
+                state["multi_sheet_analysis"] = True
+                print(f"   Multi-sheet workbook: {len(sheet_names)} sheets")
+                print(f"   Selected: {sheet_names[0]}")
+            else:
+                state["excel_sheet_names"] = sheet_names
+                state["excel_sheet_name"] = sheet_names[0] if sheet_names else None
+                state["multi_sheet_analysis"] = False
+                print(f"   Single-sheet workbook")
+            
+            # Load selected sheet
+            if state["excel_sheet_name"]:
+                df = profiler.load_data(state["file_path"], sheet_name=state["excel_sheet_name"])
+                state["df"] = df
+                
+                # Update profile
+                profile = profiler.profile_data(df)
+                state["schema"] = profile['schema']
+                state["row_count"] = profile['row_count']
+                state["column_count"] = profile['column_count']
+                state["missing_values"] = profile['missing_values']
+                
+                print(f"   Loaded {len(df)} rows from '{state['excel_sheet_name']}'")
+            
+        except Exception as e:
+            print(f"   Error in Excel sheet selection: {str(e)}")
+            state["error"] = str(e)
+        
+        return state
+    
+    def _google_sheets_load_node(self, state: AnalystState) -> AnalystState:
+        """Google Sheets data loading node"""
+        print("📊 Google Sheets: Loading data...")
+        
+        try:
+            # Load from Google Sheets
+            result = self.google_sheets.load_spreadsheet(
+                spreadsheet_id=state.get("google_spreadsheet_id", ""),
+                sheet_name=state.get("google_sheet_name")
+            )
+            
+            if result['success']:
+                state["df"] = result['data']
+                state["google_sheet_name"] = result['sheet_name']
+                state["google_authenticated"] = True
+                
+                # Update profile
+                profiler = DataProfiler()
+                profile = profiler.profile_data(result['data'])
+                state["schema"] = profile['schema']
+                state["row_count"] = profile['row_count']
+                state["column_count"] = profile['column_count']
+                state["missing_values"] = profile['missing_values']
+                
+                print(f"   Loaded {result['rows']} rows from Google Sheets")
+            else:
+                print(f"   {result['message']}")
+                state["error"] = result.get('error')
+        
+        except Exception as e:
+            print(f"   Error loading Google Sheets: {str(e)}")
+            state["error"] = str(e)
+        
+        return state
+    
+    def _spreadsheet_export_node(self, state: AnalystState) -> AnalystState:
+        """Spreadsheet result export node"""
+        print("💾 Spreadsheet Export: Exporting results...")
+        
+        try:
+            export_format = state.get("export_format", "excel")
+            
+            if export_format == "excel":
+                # Export to Excel
+                output_path = os.path.join(
+                    config.REPORTS_DIR,
+                    f"analysis_export_{int(time.time())}.xlsx"
+                )
+                
+                export_result = self.excel_handler.export_results_to_excel(
+                    state,
+                    output_path,
+                    create_summary=True
+                )
+                
+                if export_result['success']:
+                    state["export_path"] = output_path
+                    print(f"   Exported to Excel: {output_path}")
+                else:
+                    print(f"   Export failed: {export_result['error']}")
+            
+            elif export_format == "google_sheets":
+                # Export to Google Sheets
+                if state.get("google_authenticated"):
+                    write_result = self.google_sheets.write_results(
+                        state,
+                        sheet_name="Analysis Results"
+                    )
+                    
+                    if write_result['success']:
+                        print(f"   Written to Google Sheets")
+                    else:
+                        print(f"   Write failed: {write_result['error']}")
+                else:
+                    print("   Not authenticated with Google Sheets")
+        
+        except Exception as e:
+            print(f"   Error in spreadsheet export: {str(e)}")
+        
+        return state
+    
+    # ==================================================================
     #  Routing functions
     # ==================================================================
     
-    def _route_to_agent(self, state: AnalystState) -> Literal["sql", "python", "both", "error"]:
-        """Route to appropriate agent based on plan"""
+    def _route_to_agent(self, state: AnalystState) -> Literal["sql", "python", "excel_sheet", "google_sheets", "error"]:
+        """Route to appropriate agent based on plan and data source"""
+        # Check for spreadsheet sources
+        if state.get("google_spreadsheet_id"):
+            return "google_sheets"
+        elif state.get("excel_sheet_names") and len(state.get("excel_sheet_names", [])) > 1:
+            return "excel_sheet"
+        
+        # Standard agent routing
         method = state.get("selected_agent", "").lower()
         
         if method == "sql":
@@ -528,7 +700,7 @@ class AnalystWorkflow:
         elif method == "python":
             return "python"
         elif method == "both":
-            return "both"
+            return "python"  # Default to python for both
         else:
             return "error"
     

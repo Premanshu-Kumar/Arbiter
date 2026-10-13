@@ -3,7 +3,7 @@ Data Profiler Agent - Analyzes dataset structure and statistics
 """
 import pandas as pd
 import duckdb
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 import config
 
 
@@ -13,19 +13,38 @@ class DataProfiler:
     def __init__(self):
         self.conn = None
     
-    def load_data(self, file_path: str) -> pd.DataFrame:
-        """Load data from CSV or Excel file"""
+    def load_data(self, file_path: str, sheet_name: Optional[str] = None) -> pd.DataFrame:
+        """Load data from CSV or Excel file
+        
+        Args:
+            file_path: Path to file
+            sheet_name: Specific sheet name for Excel files (optional)
+        """
         try:
             if file_path.endswith('.csv'):
                 df = pd.read_csv(file_path)
             elif file_path.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(file_path)
+                if sheet_name:
+                    df = pd.read_excel(file_path, sheet_name=sheet_name)
+                else:
+                    df = pd.read_excel(file_path)
             else:
                 raise ValueError(f"Unsupported file format: {file_path}")
             
             return df
         except Exception as e:
             raise Exception(f"Error loading file: {str(e)}")
+    
+    def get_excel_sheet_names(self, file_path: str) -> List[str]:
+        """Get list of sheet names from Excel file"""
+        try:
+            if file_path.endswith(('.xlsx', '.xls')):
+                excel_file = pd.ExcelFile(file_path)
+                return excel_file.sheet_names
+            else:
+                return []
+        except Exception as e:
+            raise Exception(f"Error reading Excel sheets: {str(e)}")
     
     def profile_data(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Generate comprehensive data profile"""

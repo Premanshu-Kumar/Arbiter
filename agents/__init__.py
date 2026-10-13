@@ -11,6 +11,11 @@ from .report_agent import ReportAgent
 from .jev_validator import JevValidator
 from .cross_validator import CrossValidator
 from .self_healer import SelfHealer
+from .auto_eda_agent import AutoEDAAgent
+from .multi_file_joiner import MultiFileJoiner
+from .dataset_versioning import DatasetVersionManager
+from .excel_multi_sheet import ExcelMultiSheetHandler
+from .google_sheets_agent import GoogleSheetsIntegrator
 
 __all__ = [
     'DataProfiler',
@@ -23,4 +28,9 @@ __all__ = [
     'JevValidator',
     'CrossValidator',
     'SelfHealer',
+    'AutoEDAAgent',
+    'MultiFileJoiner',
+    'DatasetVersionManager',
+    'ExcelMultiSheetHandler',
+    'GoogleSheetsIntegrator'
 ]
