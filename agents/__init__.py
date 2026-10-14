@@ -16,6 +16,7 @@ from .multi_file_joiner import MultiFileJoiner
 from .dataset_versioning import DatasetVersionManager
 from .excel_multi_sheet import ExcelMultiSheetHandler
 from .google_sheets_agent import GoogleSheetsIntegrator
+from .ml_analytics_agent import MLAnalyticsAgent
 
 __all__ = [
     'DataProfiler',
@@ -32,5 +33,6 @@ __all__ = [
     'MultiFileJoiner',
     'DatasetVersionManager',
     'ExcelMultiSheetHandler',
-    'GoogleSheetsIntegrator'
+    'GoogleSheetsIntegrator',
+    'MLAnalyticsAgent'
 ]

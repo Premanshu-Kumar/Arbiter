@@ -22,6 +22,7 @@ from agents.excel_multi_sheet import ExcelMultiSheetHandler
 from agents.google_sheets_agent import GoogleSheetsIntegrator
 from agents.excel_addin import ExcelAddInIntegrator
 from agents.profiler import DataProfiler
+from agents.ml_analytics_agent import MLAnalyticsAgent
 from decision.validation_policies import ValidationPolicyEngine
 from sandbox.executor import SafeExecutor
 from eval.performance_dashboard import ModelPerformanceDashboard, PerformanceTimer
@@ -48,6 +49,8 @@ class AnalystWorkflow:
         self.excel_handler = ExcelMultiSheetHandler()
         self.google_sheets = GoogleSheetsIntegrator()
         self.excel_addin = ExcelAddInIntegrator()
+        # Phase 9 ML agent
+        self.ml_agent = MLAnalyticsAgent()
         self.graph = self._build_graph()
     
     def _build_graph(self) -> StateGraph:
@@ -67,6 +70,8 @@ class AnalystWorkflow:
         workflow.add_node("excel_sheet_selection", self._excel_sheet_selection_node)
         workflow.add_node("google_sheets_load", self._google_sheets_load_node)
         workflow.add_node("spreadsheet_export", self._spreadsheet_export_node)
+        # Phase 9 ML node
+        workflow.add_node("ml_agent", self._ml_agent_node)
         
         # Set entry point
         workflow.set_entry_point("planner")
@@ -78,6 +83,7 @@ class AnalystWorkflow:
             {
                 "sql": "sql_agent",
                 "python": "python_agent",
+                "ml": "ml_agent",
                 "excel_sheet": "excel_sheet_selection",
                 "google_sheets": "google_sheets_load",
                 "error": END
@@ -150,6 +156,17 @@ class AnalystWorkflow:
             {
                 "sql": "sql_agent",
                 "python": "python_agent",
+                "ml": "ml_agent",
+                "error": END
+            }
+        )
+        
+        # Phase 9: After ML agent
+        workflow.add_conditional_edges(
+            "ml_agent",
+            self._route_after_execution,
+            {
+                "validator": "validator",
                 "error": END
             }
         )
@@ -681,10 +698,78 @@ class AnalystWorkflow:
         return state
     
     # ==================================================================
+    #  Phase 9: ML Analytics Node
+    # ==================================================================
+    
+    def _ml_agent_node(self, state: AnalystState) -> AnalystState:
+        """ML Analytics node - runs advanced analytics and ML"""
+        print("🤖 ML Agent: Running advanced analytics...")
+        
+        try:
+            # Run auto ML
+            result = self.ml_agent.run_auto_ml(
+                question=state["question"],
+                df=state["df"],
+                target_column=None  # Auto-detect
+            )
+            
+            if result.get("success") is True:
+                state["result"] = result.get("predictions", [])
+                state["selected_agent"] = "ML"
+                state["code_type"] = "ml"
+                state["code"] = f"ML Task: {result.get('task')}"
+                
+                # Update ML state
+                state["ml_task"] = result.get("task")
+                state["ml_method"] = result.get("method", "auto")
+                state["ml_model"] = "RandomForest"  # Default model
+                state["ml_predictions"] = result.get("predictions", [])
+                state["ml_metrics"] = result.get("metrics", {})
+                state["ml_feature_importance"] = result.get("feature_importance", {})
+                state["ml_valid"] = True
+                
+                # Extract ML-specific results
+                if result.get("task") == "anomaly_detection":
+                    state["ml_anomalies"] = result.get("anomaly_indices", [])
+                elif result.get("task") == "clustering":
+                    state["ml_clusters"] = result.get("labels", [])
+                elif result.get("task") == "forecasting":
+                    state["ml_forecast"] = result.get("forecast", [])
+                
+                # Set validation score
+                if result.get("r2"):
+                    state["ml_validation_score"] = result["r2"]
+                elif result.get("accuracy"):
+                    state["ml_validation_score"] = result["accuracy"]
+                elif result.get("silhouette_score"):
+                    state["ml_validation_score"] = result["silhouette_score"]
+                
+                # Add insights
+                state["insights"] = result.get("insights", [])
+                
+                print(f"   ML Task: {result.get('task')}")
+                print(f"   Model: {state['ml_model']}")
+                if state["ml_metrics"]:
+                    print(f"   Metrics: {state['ml_metrics']}")
+            else:
+                state["error"] = result.get("error", "ML analysis failed")
+                state["selected_agent"] = "ML"
+                state["code_type"] = "ml"
+                print(f"   ML analysis failed: {state['error']}")
+        
+        except Exception as e:
+            print(f"   Error in ML agent: {str(e)}")
+            state["error"] = str(e)
+            state["selected_agent"] = "ML"
+            state["code_type"] = "ml"
+        
+        return state
+    
+    # ==================================================================
     #  Routing functions
     # ==================================================================
     
-    def _route_to_agent(self, state: AnalystState) -> Literal["sql", "python", "excel_sheet", "google_sheets", "error"]:
+    def _route_to_agent(self, state: AnalystState) -> Literal["sql", "python", "ml", "excel_sheet", "google_sheets", "error"]:
         """Route to appropriate agent based on plan and data source"""
         # Check for spreadsheet sources
         if state.get("google_spreadsheet_id"):
@@ -692,15 +777,18 @@ class AnalystWorkflow:
         elif state.get("excel_sheet_names") and len(state.get("excel_sheet_names", [])) > 1:
             return "excel_sheet"
         
-        # Standard agent routing
+        # Check for ML task
         method = state.get("selected_agent", "").lower()
+        task = state.get("decision", {}).get("method", "").lower()
         
+        if task == "ml" or method == "ml":
+            return "ml"
+        
+        # Standard agent routing
         if method == "sql":
             return "sql"
         elif method == "python":
             return "python"
-        elif method == "both":
-            return "python"  # Default to python for both
         else:
             return "error"
     

@@ -89,3 +89,21 @@ class AnalystState(TypedDict):
     # Spreadsheet export
     export_format: Optional[str]       # excel, google_sheets, etc.
     export_path: Optional[str]         # Path where results were exported
+
+    # Phase 9 — Advanced Analytics & ML
+    # ML task
+    ml_task: Optional[str]             # regression, classification, clustering, forecasting, anomaly_detection
+    ml_method: Optional[str]           # ML method used
+    ml_model: Optional[str]            # Model type (RandomForest, etc.)
+    
+    # ML results
+    ml_predictions: list                # Model predictions
+    ml_metrics: dict                   # Model performance metrics
+    ml_feature_importance: dict        # Feature importance scores
+    ml_anomalies: list                 # Detected anomalies
+    ml_clusters: list                  # Cluster assignments
+    ml_forecast: list                  # Forecasted values
+    
+    # ML validation
+    ml_valid: bool                     # ML model validation status
+    ml_validation_score: float         # Validation score (R2, accuracy, etc.)
