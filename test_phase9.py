@@ -8,6 +8,10 @@ Tests for:
 - Clustering
 - Feature engineering
 - Model validation
+- Correlation analysis
+- Statistical analysis
+- ML visualization
+- ML report generation
 """
 import pandas as pd
 import numpy as np
@@ -263,6 +267,140 @@ def test_auto_ml():
     print("=" * 50)
 
 
+def test_correlation_analysis():
+    """Test correlation analysis"""
+    print("\n" + "=" * 50)
+    print("Testing Phase 9: Correlation Analysis")
+    print("=" * 50)
+    
+    ml_agent = MLAnalyticsAgent()
+    
+    # Create sample data
+    df = pd.DataFrame({
+        "price": [200000, 350000, 400000, 500000, 600000],
+        "size": [1000, 1500, 2000, 2500, 3000],
+        "bedrooms": [2, 3, 3, 4, 4],
+        "age": [10, 5, 15, 8, 3]
+    })
+    
+    print("\n📊 Testing correlation analysis...")
+    result = ml_agent.analyze_correlations(df)
+    
+    if result['success']:
+        print(f"✅ Correlation analysis successful")
+        print(f"   Numeric columns: {result['numeric_columns']}")
+        print(f"   High correlations: {len(result['high_correlations'])}")
+        if result['high_correlations']:
+            print(f"   Top correlation: {result['high_correlations'][0]}")
+        print(f"   Insights: {result['insights']}")
+    else:
+        print(f"❌ Correlation analysis failed: {result['error']}")
+    
+    ml_agent.close()
+    
+    print("\n" + "=" * 50)
+    print("✅ Correlation Analysis Tests Complete")
+    print("=" * 50)
+
+
+def test_statistical_analysis():
+    """Test statistical analysis"""
+    print("\n" + "=" * 50)
+    print("Testing Phase 9: Statistical Analysis")
+    print("=" * 50)
+    
+    ml_agent = MLAnalyticsAgent()
+    
+    # Create sample data
+    df = pd.DataFrame({
+        "value": [100, 110, 105, 120, 130, 125, 140, 150, 145, 160],
+        "feature1": [50, 55, 52, 60, 65, 62, 70, 75, 72, 80],
+        "feature2": [30, 32, 31, 35, 37, 36, 40, 42, 41, 45]
+    })
+    
+    print("\n📊 Testing statistical analysis...")
+    result = ml_agent.perform_statistical_analysis(df)
+    
+    if result['success']:
+        print(f"✅ Statistical analysis successful")
+        print(f"   Numeric columns: {result['numeric_columns']}")
+        print(f"   Statistics calculated for {len(result['statistics'])} columns")
+        print(f"   Insights: {result['insights']}")
+    else:
+        print(f"❌ Statistical analysis failed: {result['error']}")
+    
+    ml_agent.close()
+    
+    print("\n" + "=" * 50)
+    print("✅ Statistical Analysis Tests Complete")
+    print("=" * 50)
+
+
+def test_ml_visualization():
+    """Test ML visualization generation"""
+    print("\n" + "=" * 50)
+    print("Testing Phase 9: ML Visualization")
+    print("=" * 50)
+    
+    ml_agent = MLAnalyticsAgent()
+    
+    # Test regression visualization
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    results = {
+        "actual": [1, 2, 3],
+        "predictions": [1.1, 2.1, 3.1]
+    }
+    
+    print("\n📊 Testing ML visualization...")
+    viz_result = ml_agent.generate_ml_visualization("regression", results, df)
+    
+    if viz_result['success']:
+        print(f"✅ ML visualization successful")
+        print(f"   Chart type: {viz_result['visualization']['chart_type']}")
+        print(f"   Data shape: {viz_result['visualization']['data'].shape}")
+    else:
+        print(f"❌ ML visualization failed: {viz_result['error']}")
+    
+    ml_agent.close()
+    
+    print("\n" + "=" * 50)
+    print("✅ ML Visualization Tests Complete")
+    print("=" * 50)
+
+
+def test_ml_report():
+    """Test ML report generation"""
+    print("\n" + "=" * 50)
+    print("Testing Phase 9: ML Report Generation")
+    print("=" * 50)
+    
+    ml_agent = MLAnalyticsAgent()
+    
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    results = {
+        "r2": 0.95,
+        "mse": 100,
+        "predictions": [1, 2, 3],
+        "insights": ["Good model"]
+    }
+    
+    print("\n📝 Testing ML report generation...")
+    report_result = ml_agent.generate_ml_report("Predict price", "regression", results, df)
+    
+    if report_result['success']:
+        print(f"✅ ML report generation successful")
+        print(f"   Report sections: {list(report_result['report'].keys())}")
+        print(f"   Problem definition: {report_result['report']['problem_definition']}")
+    else:
+        print(f"❌ ML report generation failed: {report_result['error']}")
+    
+    ml_agent.close()
+    
+    print("\n" + "=" * 50)
+    print("✅ ML Report Generation Tests Complete")
+    print("=" * 50)
+
+
 if __name__ == "__main__":
     test_regression()
     test_classification()
@@ -271,6 +409,10 @@ if __name__ == "__main__":
     test_forecasting()
     test_task_detection()
     test_auto_ml()
+    test_correlation_analysis()
+    test_statistical_analysis()
+    test_ml_visualization()
+    test_ml_report()
     
     print("\n" + "=" * 50)
     print("Phase 9 Advanced Analytics & ML Tests Complete")

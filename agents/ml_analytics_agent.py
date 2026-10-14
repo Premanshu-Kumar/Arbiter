@@ -26,6 +26,7 @@ from sklearn.metrics import (
 )
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
+from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -92,6 +93,22 @@ class MLAnalyticsAgent:
                 "task": "clustering",
                 "method": "ML",
                 "reason": "Question asks for clustering/segmentation"
+            }
+        
+        # Detect correlation analysis
+        if any(word in question_lower for word in ['correlation', 'relationship', 'correlate', 'correlated']):
+            return {
+                "task": "correlation_analysis",
+                "method": "ML",
+                "reason": "Question asks for correlation analysis"
+            }
+        
+        # Detect statistical analysis
+        if any(word in question_lower for word in ['statistics', 'statistical', 'distribution', 'analyze data']):
+            return {
+                "task": "statistical_analysis",
+                "method": "ML",
+                "reason": "Question asks for statistical analysis"
             }
         
         # Detect classification
@@ -565,6 +582,137 @@ class MLAnalyticsAgent:
             }
     
     # ==================================================================
+    #  Correlation Analysis
+    # ==================================================================
+    
+    def analyze_correlations(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Perform correlation analysis on numeric columns.
+        
+        Args:
+            df: Input DataFrame
+        
+        Returns:
+            Correlation analysis results
+        """
+        try:
+            # Get numeric columns
+            numeric_cols = df.select_dtypes(include=['number']).columns
+            
+            if len(numeric_cols) < 2:
+                return {
+                    "success": False,
+                    "error": "Need at least 2 numeric columns for correlation analysis",
+                    "message": "Not enough numeric columns"
+                }
+            
+            # Calculate correlation matrix
+            corr_matrix = df[numeric_cols].corr()
+            
+            # Find highly correlated pairs
+            high_corr_pairs = []
+            for i in range(len(corr_matrix.columns)):
+                for j in range(i + 1, len(corr_matrix.columns)):
+                    corr_value = corr_matrix.iloc[i, j]
+                    if abs(corr_value) > 0.7:  # High correlation threshold
+                        high_corr_pairs.append({
+                            "feature1": corr_matrix.columns[i],
+                            "feature2": corr_matrix.columns[j],
+                            "correlation": corr_value
+                        })
+            
+            # Sort by absolute correlation
+            high_corr_pairs.sort(key=lambda x: abs(x['correlation']), reverse=True)
+            
+            return {
+                "success": True,
+                "task": "correlation_analysis",
+                "correlation_matrix": corr_matrix.to_dict(),
+                "high_correlations": high_corr_pairs[:10],  # Top 10
+                "numeric_columns": numeric_cols.tolist(),
+                "insights": [
+                    f"Analyzed {len(numeric_cols)} numeric columns",
+                    f"Found {len(high_corr_pairs)} highly correlated pairs (|r| > 0.7)",
+                    f"Strongest correlation: {high_corr_pairs[0]['feature1']} <-> {high_corr_pairs[0]['feature2']} ({high_corr_pairs[0]['correlation']:.3f})" if high_corr_pairs else "No strong correlations found"
+                ]
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Correlation analysis failed: {str(e)}"
+            }
+    
+    # ==================================================================
+    #  Statistical Analysis
+    # ==================================================================
+    
+    def perform_statistical_analysis(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Perform comprehensive statistical analysis.
+        
+        Args:
+            df: Input DataFrame
+        
+        Returns:
+            Statistical analysis results
+        """
+        try:
+            # Get numeric columns
+            numeric_cols = df.select_dtypes(include=['number']).columns
+            
+            if len(numeric_cols) == 0:
+                return {
+                    "success": False,
+                    "error": "No numeric columns found",
+                    "message": "Statistical analysis requires numeric data"
+                }
+            
+            stats_results = {}
+            
+            for col in numeric_cols:
+                col_data = df[col].dropna()
+                
+                # Basic statistics
+                stats_results[col] = {
+                    "count": len(col_data),
+                    "mean": col_data.mean(),
+                    "median": col_data.median(),
+                    "std": col_data.std(),
+                    "min": col_data.min(),
+                    "max": col_data.max(),
+                    "q25": col_data.quantile(0.25),
+                    "q75": col_data.quantile(0.75),
+                    "skewness": stats.skew(col_data),
+                    "kurtosis": stats.kurtosis(col_data)
+                }
+            
+            # Correlation with other columns
+            if len(numeric_cols) > 1:
+                corr_result = self.analyze_correlations(df)
+                stats_results["correlations"] = corr_result.get("high_correlations", [])
+            
+            return {
+                "success": True,
+                "task": "statistical_analysis",
+                "statistics": stats_results,
+                "numeric_columns": numeric_cols.tolist(),
+                "insights": [
+                    f"Analyzed {len(numeric_cols)} numeric columns",
+                    f"Skewness and kurtosis calculated for all columns",
+                    f"Correlation analysis included"
+                ]
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Statistical analysis failed: {str(e)}"
+            }
+    
+    # ==================================================================
     #  Automated ML Pipeline
     # ==================================================================
     
@@ -619,11 +767,223 @@ class MLAnalyticsAgent:
             return self.detect_anomalies(df)
         elif task == 'forecasting':
             return self.perform_forecasting(df, target_column)
+        elif task == 'correlation_analysis':
+            return self.analyze_correlations(df)
+        elif task == 'statistical_analysis':
+            return self.perform_statistical_analysis(df)
         else:
             return {
                 "success": False,
                 "error": f"Unsupported task: {task}",
                 "message": f"Task {task} is not yet implemented"
+            }
+    
+    # ==================================================================
+    #  ML Visualization Generation
+    # ==================================================================
+    
+    def generate_ml_visualization(
+        self,
+        task: str,
+        results: Dict[str, Any],
+        df: pd.DataFrame
+    ) -> Dict[str, Any]:
+        """
+        Generate ML-specific visualization data.
+        
+        Args:
+            task: ML task type
+            results: ML analysis results
+            df: Input DataFrame
+        
+        Returns:
+            Visualization data for plotting
+        """
+        try:
+            viz_data = {
+                "task": task,
+                "chart_type": None,
+                "data": None,
+                "layout": None
+            }
+            
+            if task == "regression":
+                # Actual vs Predicted scatter plot
+                actual = results.get("actual", [])
+                predicted = results.get("predictions", [])
+                viz_data["chart_type"] = "scatter"
+                viz_data["data"] = pd.DataFrame({
+                    "actual": actual,
+                    "predicted": predicted
+                })
+                viz_data["layout"] = {
+                    "title": "Actual vs Predicted",
+                    "xaxis": {"title": "Actual"},
+                    "yaxis": {"title": "Predicted"}
+                }
+            
+            elif task == "classification":
+                # Confusion matrix heatmap
+                if results.get("predictions") and results.get("actual"):
+                    viz_data["chart_type"] = "heatmap"
+                    cm = confusion_matrix(results["actual"], results["predictions"])
+                    viz_data["data"] = pd.DataFrame(cm)
+                    viz_data["layout"] = {
+                        "title": "Confusion Matrix",
+                        "xaxis": {"title": "Predicted"},
+                        "yaxis": {"title": "Actual"}
+                    }
+            
+            elif task == "clustering":
+                # Cluster scatter plot (if 2-3 features)
+                numeric_cols = df.select_dtypes(include=['number']).columns
+                if len(numeric_cols) >= 2:
+                    cluster_labels = results.get("labels", [])
+                    df_viz = df[numeric_cols[:2]].copy()
+                    df_viz["cluster"] = cluster_labels
+                    viz_data["chart_type"] = "scatter"
+                    viz_data["data"] = df_viz
+                    viz_data["layout"] = {
+                        "title": "Cluster Visualization",
+                        "xaxis": {"title": numeric_cols[0]},
+                        "yaxis": {"title": numeric_cols[1]}
+                    }
+            
+            elif task == "anomaly_detection":
+                # Time series with anomalies highlighted
+                viz_data["chart_type"] = "scatter"
+                df_viz = df.copy()
+                df_viz["is_anomaly"] = results.get("anomaly_indices", [0] * len(df))
+                viz_data["data"] = df_viz
+                viz_data["layout"] = {
+                    "title": "Anomaly Detection",
+                    "xaxis": {"title": "Index"},
+                    "yaxis": {"title": "Value"}
+                }
+            
+            elif task == "forecasting":
+                # Time series with forecast
+                historical = results.get("historical", [])
+                forecast = results.get("forecast", [])
+                combined = historical + forecast
+                labels = list(range(len(historical))) + list(range(len(historical), len(combined)))
+                viz_data["chart_type"] = "line"
+                viz_data["data"] = pd.DataFrame({
+                    "index": labels,
+                    "value": combined,
+                    "type": ["historical"] * len(historical) + ["forecast"] * len(forecast)
+                })
+                viz_data["layout"] = {
+                    "title": "Time Series Forecast",
+                    "xaxis": {"title": "Period"},
+                    "yaxis": {"title": "Value"}
+                }
+            
+            elif task == "correlation_analysis":
+                # Correlation heatmap
+                corr_matrix = results.get("correlation_matrix", {})
+                if corr_matrix:
+                    viz_data["chart_type"] = "heatmap"
+                    viz_data["data"] = pd.DataFrame(corr_matrix)
+                    viz_data["layout"] = {
+                        "title": "Correlation Matrix"
+                    }
+            
+            return {
+                "success": True,
+                "visualization": viz_data
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Visualization generation failed: {str(e)}"
+            }
+    
+    # ==================================================================
+    #  ML Report Generation
+    # ==================================================================
+    
+    def generate_ml_report(
+        self,
+        question: str,
+        task: str,
+        results: Dict[str, Any],
+        df: pd.DataFrame
+    ) -> Dict[str, Any]:
+        """
+        Generate ML-specific report sections.
+        
+        Args:
+            question: User's question
+            task: ML task type
+            results: ML analysis results
+            df: Input DataFrame
+        
+        Returns:
+            ML report sections
+        """
+        try:
+            report_sections = {
+                "problem_definition": f"Analysis question: {question}",
+                "task_type": task,
+                "dataset_info": {
+                    "rows": len(df),
+                    "columns": len(df.columns),
+                    "column_names": df.columns.tolist()
+                },
+                "method_used": results.get("method", "auto"),
+                "model_used": results.get("ml_model", "RandomForest"),
+                "evaluation_metrics": results.get("metrics", {}),
+                "predictions": results.get("predictions", [])[:10],  # First 10 predictions
+                "key_findings": results.get("insights", []),
+                "feature_importance": results.get("feature_importance", {})
+            }
+            
+            # Add task-specific sections
+            if task == "regression":
+                report_sections["model_performance"] = {
+                    "r2_score": results.get("r2"),
+                    "mse": results.get("mse"),
+                    "interpretation": f"Model explains {results.get('r2', 0) * 100:.1f}% of variance"
+                }
+            elif task == "classification":
+                report_sections["model_performance"] = {
+                    "accuracy": results.get("accuracy"),
+                    "precision": results.get("precision"),
+                    "recall": results.get("recall"),
+                    "f1_score": results.get("f1")
+                }
+            elif task == "clustering":
+                report_sections["cluster_analysis"] = {
+                    "n_clusters": results.get("n_clusters"),
+                    "silhouette_score": results.get("silhouette_score"),
+                    "cluster_stats": results.get("cluster_stats", {})
+                }
+            elif task == "anomaly_detection":
+                report_sections["anomaly_analysis"] = {
+                    "n_anomalies": results.get("n_anomalies"),
+                    "anomaly_percentage": results.get("anomaly_percentage"),
+                    "method": results.get("method")
+                }
+            elif task == "forecasting":
+                report_sections["forecast_analysis"] = {
+                    "periods": results.get("periods"),
+                    "trend": results.get("trend"),
+                    "forecast_values": results.get("forecast", [])
+                }
+            
+            return {
+                "success": True,
+                "report": report_sections
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Report generation failed: {str(e)}"
             }
     
     def close(self):
