@@ -1,0 +1,26 @@
+{
+  "name": "excel-addin-analyst",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "start": "office-addin-debugging start manifest.xml"
+  },
+  "dependencies": {
+    "@microsoft/office-js": "^1.1.75",
+    "office-js": "^0.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.612",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.6.2",
+    "typescript": "^5.2.0",
+    "webpack": "^5.111.1",
+    "webpack-cli": "^5.1.4"
+  }
+}

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Agent Data Analyst - Standalone Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2b579a;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .input-section {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 100px;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #2b579a;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    button:hover {
+      background-color: #1e3e6e;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .error {
+      color: #d9534f;
+      background-color: #f2dede;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #ebccd1;
+    }
+    .success {
+      color: #3c763d;
+      background-color: #dff0d8;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border: 1px solid #d6e9c6;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #2b579a;
+      color: white;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .loading.active {
+      display: block;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #2b579a;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 Multi-Agent Data Analyst</h1>
+    <p class="subtitle">AI-powered data analysis - Standalone Version</p>
+    
+    <div class="input-section">
+      <label>Upload Excel/CSV File:</label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+    </div>
+    
+    <div class="input-section">
+      <label>Ask a question about your data:</label>
+      <textarea id="questionInput" placeholder="e.g., What is the average value by category?"></textarea>
+    </div>
+    
+    <button id="analyzeBtn" onclick="analyzeData()">Analyze</button>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Analyzing data...</p>
+    </div>
+    
+    <div id="error" class="error" style="display: none;"></div>
+    <div id="success" class="success" style="display: none;"></div>
+    
+    <div id="results" class="results" style="display: none;">
+      <h2>Results</h2>
+      <div id="resultsContent"></div>
+    </div>
+  </div>
+
+  <script>
+    function analyzeData() {
+      const question = document.getElementById('questionInput').value;
+      const fileInput = document.getElementById('fileInput');
+      
+      if (!question.trim()) {
+        showError('Please enter a question');
+        return;
+      }
+      
+      if (!fileInput.files.length) {
+        showError('Please upload a file');
+        return;
+      }
+      
+      // Show loading
+      document.getElementById('loading').classList.add('active');
+      document.getElementById('analyzeBtn').disabled = true;
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('success').style.display = 'none';
+      document.getElementById('results').style.display = 'none';
+      
+      // Simulate analysis (in real version, this would call the backend)
+      setTimeout(() => {
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('analyzeBtn').disabled = false;
+        
+        // Show success message
+        document.getElementById('success').style.display = 'block';
+        document.getElementById('success').textContent = 'Analysis complete! In the full Excel Add-in, results would be written back to Excel cells.';
+        
+        // Show results
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('resultsContent').innerHTML = `
+          <p><strong>Question:</strong> ${question}</p>
+          <p><strong>File:</strong> ${fileInput.files[0].name}</p>
+          <p><strong>Status:</strong> Analysis would be performed by the Multi-Agent Data Analyst backend</p>
+          <p><strong>Next Steps:</strong></p>
+          <ul>
+            <li>Load the full backend with: <code>python app.py</code></li>
+            <li>Results would be written to Excel cells</li>
+            <li>Charts would be created in Excel</li>
+            <li>Full multi-agent analysis would run</li>
+          </ul>
+        `;
+      }, 2000);
+    }
+    
+    function showError(message) {
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = message;
+    }
+  </script>
+</body>
+</html>
