@@ -12,7 +12,11 @@ import pandas as pd
 import openpyxl
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.drawing.image import Image
+from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 import os
+import base64
+from io import BytesIO
 import config
 
 
@@ -245,6 +249,11 @@ class ExcelMultiSheetHandler:
                 
                 ws.cell(row=row, column=1, value="Charts Generated:")
                 ws.cell(row=row, column=2, value=len(results.get('charts', [])))
+                row += 2
+                
+                # Export charts if available
+                if results.get('charts'):
+                    self.export_charts_to_excel(results['charts'], output_path)
             
             # Save workbook
             os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)
@@ -309,6 +318,129 @@ class ExcelMultiSheetHandler:
                     "dtypes": df.dtypes.astype(str).to_dict(),
                     "null_counts": df.isnull().sum().to_dict()
                 }
+        
+        return results
+    
+    def export_chart_to_excel(
+        self,
+        chart_data: Dict[str, Any],
+        output_path: str,
+        sheet_name: str = "Charts"
+    ) -> Dict[str, Any]:
+        """
+        Export a chart to Excel sheet.
+        
+        Args:
+            chart_data: Chart data from viz_agent (type, data, layout)
+            output_path: Path to Excel file
+            sheet_name: Name of sheet to add chart to
+        
+        Returns:
+            Export status
+        """
+        try:
+            # Load existing workbook or create new
+            if os.path.exists(output_path):
+                wb = load_workbook(output_path)
+            else:
+                wb = Workbook()
+                wb.remove(wb.active)
+            
+            # Create or get chart sheet
+            if sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+            else:
+                ws = wb.create_sheet(sheet_name)
+            
+            # Add chart data
+            if chart_data.get('data') is not None:
+                if isinstance(chart_data['data'], pd.DataFrame):
+                    # Write chart data to sheet
+                    for r_idx, row in enumerate(chart_data['data'].values, 1):
+                        for c_idx, value in enumerate(row, 1):
+                            ws.cell(row=r_idx, column=c_idx, value=value)
+                    
+                    # Add headers
+                    for c_idx, col_name in enumerate(chart_data['data'].columns, 1):
+                        ws.cell(row=1, column=c_idx, value=col_name)
+                        ws.cell(row=1, column=c_idx).font = Font(bold=True)
+                    
+                    # Create Excel chart based on type
+                    chart_type = chart_data.get('type', 'bar')
+                    
+                    if chart_type in ['bar', 'column']:
+                        excel_chart = BarChart()
+                        excel_chart.type = "col"
+                    elif chart_type == 'line':
+                        excel_chart = LineChart()
+                    elif chart_type == 'pie':
+                        excel_chart = PieChart()
+                    else:
+                        excel_chart = BarChart()
+                    
+                    # Set data reference
+                    data_ref = Reference(ws, min_col=2, min_row=1, 
+                                       max_row=len(chart_data['data']) + 1,
+                                       max_col=len(chart_data['data'].columns))
+                    cats_ref = Reference(ws, min_col=1, min_row=1, 
+                                        max_row=len(chart_data['data']) + 1)
+                    
+                    excel_chart.add_data(data_ref, titles_from_data=True)
+                    excel_chart.set_categories(cats_ref)
+                    
+                    # Add chart to sheet
+                    ws.add_chart(excel_chart, f"A{len(chart_data['data']) + 5}")
+            
+            # Save workbook
+            wb.save(output_path)
+            
+            return {
+                "success": True,
+                "output_path": output_path,
+                "message": f"Chart exported to {sheet_name} in {output_path}"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": f"Failed to export chart: {str(e)}"
+            }
+    
+    def export_charts_to_excel(
+        self,
+        charts: List[Dict[str, Any]],
+        output_path: str
+    ) -> Dict[str, Any]:
+        """
+        Export multiple charts to Excel.
+        
+        Args:
+            charts: List of chart data dictionaries
+            output_path: Path to Excel file
+        
+        Returns:
+            Export status
+        """
+        results = {
+            "success": True,
+            "exported_charts": 0,
+            "total_charts": len(charts),
+            "message": ""
+        }
+        
+        for i, chart_data in enumerate(charts):
+            sheet_name = f"Chart_{i+1}"
+            result = self.export_chart_to_excel(chart_data, output_path, sheet_name)
+            
+            if result['success']:
+                results["exported_charts"] += 1
+            else:
+                results["success"] = False
+                results["message"] += f"Chart {i+1} failed: {result['error']}; "
+        
+        if results["success"]:
+            results["message"] = f"Exported {results['exported_charts']}/{results['total_charts']} charts"
         
         return results
     

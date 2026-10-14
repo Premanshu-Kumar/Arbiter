@@ -5,13 +5,16 @@ Tests for:
 - Multi-sheet Excel support
 - Excel sheet selection
 - Excel result export
+- Chart export to Excel
 - Google Sheets integration (mock)
+- Excel Add-in generation
 """
 import pandas as pd
 import os
 from agents.excel_multi_sheet import ExcelMultiSheetHandler
 from agents.google_sheets_agent import GoogleSheetsIntegrator
 from agents.profiler import DataProfiler
+from agents.excel_addin import ExcelAddInIntegrator
 
 
 def test_excel_multi_sheet():
@@ -99,7 +102,16 @@ def test_excel_multi_sheet():
         }),
         "code": "SELECT category, SUM(value) FROM data GROUP BY category",
         "code_type": "sql",
-        "insights": ["Total is 1100"]
+        "insights": ["Total is 1100"],
+        "charts": [
+            {
+                "type": "bar",
+                "data": pd.DataFrame({
+                    "category": ["A", "B"],
+                    "total": [500, 600]
+                })
+            }
+        ]
     }
     
     export_result = handler.export_results_to_excel(
@@ -112,6 +124,27 @@ def test_excel_multi_sheet():
         print(f"✅ Exported results to {export_path}")
     else:
         print(f"❌ Export failed: {export_result['error']}")
+    
+    # Test chart export
+    print("\n📊 Testing chart export...")
+    chart_data = {
+        "type": "bar",
+        "data": pd.DataFrame({
+            "category": ["A", "B", "C"],
+            "value": [100, 200, 300]
+        })
+    }
+    
+    chart_export_result = handler.export_chart_to_excel(
+        chart_data,
+        export_path,
+        sheet_name="Chart_Test"
+    )
+    
+    if chart_export_result['success']:
+        print(f"✅ Chart exported successfully")
+    else:
+        print(f"⚠️ Chart export: {chart_export_result['message']}")
     
     handler.close()
     
@@ -206,10 +239,56 @@ def test_profiler_sheet_support():
     print("=" * 50)
 
 
+def test_excel_addin_generation():
+    """Test Excel Add-in project generation"""
+    print("\n" + "=" * 50)
+    print("Testing Phase 8: Excel Add-in Generation")
+    print("=" * 50)
+    
+    from agents.excel_addin import ExcelAddInIntegrator
+    
+    integrator = ExcelAddInIntegrator()
+    
+    # Test project generation
+    print("\n📦 Testing Excel Add-in project generation...")
+    output_dir = "data/excel_addin_project"
+    
+    result = integrator.generate_addin_project(output_dir)
+    
+    if result['success']:
+        print(f"✅ Generated Excel Add-in project")
+        print(f"   Files created: {result['files']}")
+    else:
+        print(f"❌ Generation failed: {result['error']}")
+    
+    # Test getting manifest
+    print("\n📄 Testing manifest generation...")
+    manifest = integrator.get_manifest()
+    if len(manifest) > 0:
+        print(f"✅ Manifest generated ({len(manifest)} characters)")
+    
+    # Test getting Office.js code
+    print("\n📝 Testing Office.js code generation...")
+    office_js = integrator.get_office_js_code()
+    if len(office_js) > 0:
+        print(f"✅ Office.js code generated ({len(office_js)} characters)")
+    
+    # Test getting React component
+    print("\n⚛️  Testing React component generation...")
+    react_component = integrator.get_react_component()
+    if len(react_component) > 0:
+        print(f"✅ React component generated ({len(react_component)} characters)")
+    
+    print("\n" + "=" * 50)
+    print("✅ Excel Add-in Generation Tests Complete")
+    print("=" * 50)
+
+
 if __name__ == "__main__":
     test_excel_multi_sheet()
     test_google_sheets_mock()
     test_profiler_sheet_support()
+    test_excel_addin_generation()
     
     print("\n" + "=" * 50)
     print("Phase 8 Spreadsheet Integration Tests Complete")
