@@ -83,52 +83,77 @@ class SQLAgent:
         num_cols = []
         
         for line in schema.split("\n"):
-            if "-" in line and "(" in line:
-                col_name = line.split("-")[0].strip()
-                if col_name is not None and col_name != "" and not col_name.startswith("Column"):
-                    columns.append(col_name)
-                    
-                    # Check type indicator
-                    if "[NUMERIC]" in line.upper():
-                        num_cols.append(col_name)
-                    elif "[CATEGORICAL]" in line.upper():
-                        cat_cols.append(col_name)
+            # Try to match the schema line format: "  - column (dtype) [TYPE] - null%"
+            # Handle both regular dash and en dash
+            if "–" in line or "-" in line:
+                # Replace en dash with regular dash
+                line = line.replace("–", "-")
+                # Remove multiple spaces
+                line = " ".join(line.split())
+                parts = line.split("-")
+                if len(parts) >= 1:
+                    col_name = parts[0].strip()
+                    if col_name and not col_name.startswith("Column") and col_name != "Columns" and col_name != "Rows":
+                        columns.append(col_name)
+                        
+                        # Check type indicator
+                        if "[NUMERIC]" in line.upper():
+                            num_cols.append(col_name)
+                        elif "[CATEGORICAL]" in line.upper():
+                            cat_cols.append(col_name)
         
-        # Detect mentioned columns in question
-        mentioned_columns = [col for col in columns if col.lower() in question_lower]
+        # Detect mentioned columns in question (smart word-level matching)
+        mentioned_columns = []
+        sql_keywords = {'average', 'mean', 'sum', 'count', 'max', 'min', 'total', 'top', 'bottom', 'by', 'per', 'each', 'group'}
+        
+        for col in columns:
+            col_lower = col.lower()
+            # Check if any word from the question matches the column name
+            words = question_lower.split()
+            # Filter out SQL keywords
+            meaningful_words = [w for w in words if w not in sql_keywords and len(w) >= 3]
+            
+            for word in meaningful_words:
+                # Check if word matches column name or is contained in it
+                if word == col_lower or word in col_lower:
+                    mentioned_columns.append(col)
+                    break
+        
+        mentioned_cat = [col for col in mentioned_columns if col in cat_cols]
+        mentioned_num = [col for col in mentioned_columns if col in num_cols]
+        
+        # Determine aggregation function
+        agg_func = None
+        if 'average' in question_lower or 'mean' in question_lower:
+            agg_func = 'AVG'
+        elif 'sum' in question_lower or 'total' in question_lower:
+            agg_func = 'SUM'
+        elif 'count' in question_lower:
+            agg_func = 'COUNT'
+        elif 'max' in question_lower or 'maximum' in question_lower:
+            agg_func = 'MAX'
+        elif 'min' in question_lower or 'minimum' in question_lower:
+            agg_func = 'MIN'
+        
+        # Check if this is a grouping query (has grouping keyword OR has both cat and num columns mentioned)
+        has_grouping_keyword = any(word in question_lower for word in ['by', 'per', 'for each', 'group'])
+        has_grouping_pattern = len(mentioned_cat) >= 1 and len(mentioned_num) >= 1
         
         # Handle grouping/aggregation queries
-        if any(word in question_lower for word in ['by', 'per', 'for each', 'group']):
-            if len(cat_cols) >= 1 and len(num_cols) >= 1:
-                group_col = cat_cols[0]
-                agg_col = num_cols[0]
-                
-                if 'average' in question_lower or 'mean' in question_lower:
-                    return {
-                        "code": f"SELECT {group_col}, AVG({agg_col}) as avg_{agg_col} FROM data GROUP BY {group_col}",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for average {agg_col} by {group_col}"
-                    }
-                elif 'sum' in question_lower or 'total' in question_lower:
-                    return {
-                        "code": f"SELECT {group_col}, SUM({agg_col}) as total_{agg_col} FROM data GROUP BY {group_col}",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for sum {agg_col} by {group_col}"
-                    }
-                elif 'count' in question_lower:
-                    return {
-                        "code": f"SELECT {group_col}, COUNT(*) as count FROM data GROUP BY {group_col}",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for count by {group_col}"
-                    }
-            elif len(cat_cols) >= 1:
-                group_col = cat_cols[0]
+        if has_grouping_keyword or has_grouping_pattern:
+            # Use mentioned columns if available, otherwise use first of each type
+            group_col = mentioned_cat[0] if mentioned_cat else (cat_cols[0] if cat_cols else None)
+            agg_col = mentioned_num[0] if mentioned_num else (num_cols[0] if num_cols else None)
+            
+            if group_col and agg_col and agg_func:
+                return {
+                    "code": f"SELECT {group_col}, {agg_func}({agg_col}) as {agg_func.lower()}_{agg_col} FROM data GROUP BY {group_col}",
+                    "code_type": "sql",
+                    "method": "SQL",
+                    "success": True,
+                    "reasoning": f"Generated SQL for {agg_func.lower()} {agg_col} by {group_col}"
+                }
+            elif group_col and agg_func == 'COUNT':
                 return {
                     "code": f"SELECT {group_col}, COUNT(*) as count FROM data GROUP BY {group_col}",
                     "code_type": "sql",
@@ -137,117 +162,60 @@ class SQLAgent:
                     "reasoning": f"Generated SQL for count by {group_col}"
                 }
         
-        # Handle specific column-based queries
-        if "average" in question_lower or "mean" in question_lower:
-            if mentioned_columns:
-                numeric_mentioned = [col for col in mentioned_columns if col in num_cols]
-                cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
-                
-                if len(numeric_mentioned) >= 1 and len(cat_mentioned) >= 1:
-                    # Group by categorical, aggregate numeric
-                    group_col = cat_mentioned[0]
-                    agg_col = numeric_mentioned[0]
-                    return {
-                        "code": f"SELECT {group_col}, AVG({agg_col}) as avg_{agg_col} FROM data GROUP BY {group_col}",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for average {agg_col} by {group_col}"
-                    }
-                elif len(numeric_mentioned) >= 1:
-                    return {
-                        "code": f"SELECT AVG({', '.join(numeric_mentioned)}) as avg_value FROM data",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for average of {', '.join(numeric_mentioned)}"
-                    }
-            if num_cols:
-                return {
-                    "code": f"SELECT AVG({num_cols[0]}) as avg_value FROM data",
-                    "code_type": "sql",
-                    "method": "SQL",
-                    "success": True,
-                    "reasoning": f"Generated SQL for average of {num_cols[0]}"
-                }
-        elif "sum" in question_lower or "total" in question_lower:
-            if mentioned_columns:
-                numeric_mentioned = [col for col in mentioned_columns if col in num_cols]
-                cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
-                
-                if len(numeric_mentioned) >= 1 and len(cat_mentioned) >= 1:
-                    group_col = cat_mentioned[0]
-                    agg_col = numeric_mentioned[0]
-                    return {
-                        "code": f"SELECT {group_col}, SUM({agg_col}) as total_{agg_col} FROM data GROUP BY {group_col}",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for sum {agg_col} by {group_col}"
-                    }
-                elif len(numeric_mentioned) >= 1:
-                    return {
-                        "code": f"SELECT SUM({', '.join(numeric_mentioned)}) as total_value FROM data",
-                        "code_type": "sql",
-                        "method": "SQL",
-                        "success": True,
-                        "reasoning": f"Generated SQL for sum of {', '.join(numeric_mentioned)}"
-                    }
-            if num_cols:
-                return {
-                    "code": f"SELECT SUM({num_cols[0]}) as total_value FROM data",
-                    "code_type": "sql",
-                    "method": "SQL",
-                    "success": True,
-                    "reasoning": f"Generated SQL for sum of {num_cols[0]}"
-                }
-        elif "count" in question_lower:
-            if mentioned_columns:
-                if len(mentioned_columns) >= 2:
-                    cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
-                    if len(cat_mentioned) >= 1:
-                        group_col = cat_mentioned[0]
-                        other_col = [c for c in mentioned_columns if c != group_col][0]
-                        return {
-                            "code": f"SELECT {group_col}, COUNT({other_col}) as count FROM data GROUP BY {group_col}",
-                            "code_type": "sql",
-                            "method": "SQL",
-                            "success": True,
-                            "reasoning": f"Generated SQL for count {other_col} by {group_col}"
-                        }
-                return {
-                    "code": f"SELECT {mentioned_columns[0]}, COUNT(*) as count FROM data GROUP BY {mentioned_columns[0]}",
-                    "code_type": "sql",
-                    "method": "SQL",
-                    "success": True,
-                    "reasoning": f"Generated SQL for count by {mentioned_columns[0]}"
-                }
-            if cat_cols:
-                return {
-                    "code": f"SELECT {cat_cols[0]}, COUNT(*) as count FROM data GROUP BY {cat_cols[0]}",
-                    "code_type": "sql",
-                    "method": "SQL",
-                    "success": True,
-                    "reasoning": f"Generated SQL for count by {cat_cols[0]}"
-                }
-        elif "top" in question_lower:
-            if num_cols:
-                return {
-                    "code": f"SELECT * FROM data ORDER BY {num_cols[0]} DESC LIMIT 10",
-                    "code_type": "sql",
-                    "method": "SQL",
-                    "success": True,
-                    "reasoning": f"Generated SQL for top values by {num_cols[0]}"
-                }
-        else:
-            # Default SELECT
+        # Handle single column aggregations
+        if agg_func and mentioned_num:
             return {
-                "code": "SELECT * FROM data LIMIT 10",
+                "code": f"SELECT {agg_func}({', '.join(mentioned_num)}) as {agg_func.lower()}_value FROM data",
                 "code_type": "sql",
                 "method": "SQL",
                 "success": True,
-                "reasoning": "Generated default SELECT query"
+                "reasoning": f"Generated SQL for {agg_func.lower()} of {', '.join(mentioned_num)}"
             }
+        elif agg_func and num_cols:
+            return {
+                "code": f"SELECT {agg_func}({num_cols[0]}) as {agg_func.lower()}_value FROM data",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": f"Generated SQL for {agg_func.lower()} of {num_cols[0]}"
+            }
+        
+        # Handle count of categorical
+        if 'count' in question_lower and mentioned_cat:
+            return {
+                "code": f"SELECT {mentioned_cat[0]}, COUNT(*) as count FROM data GROUP BY {mentioned_cat[0]}",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": f"Generated SQL for count by {mentioned_cat[0]}"
+            }
+        elif 'count' in question_lower and cat_cols:
+            return {
+                "code": f"SELECT {cat_cols[0]}, COUNT(*) as count FROM data GROUP BY {cat_cols[0]}",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": f"Generated SQL for count by {cat_cols[0]}"
+            }
+        
+        # Handle top/bottom queries
+        if "top" in question_lower and num_cols:
+            return {
+                "code": f"SELECT * FROM data ORDER BY {num_cols[0]} DESC LIMIT 10",
+                "code_type": "sql",
+                "method": "SQL",
+                "success": True,
+                "reasoning": f"Generated SQL for top values by {num_cols[0]}"
+            }
+        
+        # Default SELECT
+        return {
+            "code": "SELECT * FROM data LIMIT 10",
+            "code_type": "sql",
+            "method": "SQL",
+            "success": True,
+            "reasoning": "Generated default SELECT query"
+        }
     
     def _build_sql_prompt(
         self,

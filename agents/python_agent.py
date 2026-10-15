@@ -63,33 +63,120 @@ class PythonAgent:
     
     def generate_python_mock(self, question: str, schema: str, plan: Dict[str, Any]) -> Dict[str, Any]:
         """Mock Python generation for testing without Ollama"""
-        # Simple rule-based Python generation as fallback
+        # Enhanced rule-based Python generation with real column names
         question_lower = question.lower()
         
+        # Extract column names and types from schema
+        columns = []
+        cat_cols = []
+        num_cols = []
+        
+        for line in schema.split("\n"):
+            if "–" in line or "-" in line:
+                line = line.replace("–", "-")
+                parts = line.split("-")
+                if len(parts) >= 1:
+                    col_name = parts[0].strip()
+                    if col_name and not col_name.startswith("Column") and col_name != "Columns" and col_name != "Rows":
+                        columns.append(col_name)
+                        
+                        if "[NUMERIC]" in line.upper():
+                            num_cols.append(col_name)
+                        elif "[CATEGORICAL]" in line.upper():
+                            cat_cols.append(col_name)
+        
+        # Detect mentioned columns
+        sql_keywords = {'average', 'mean', 'sum', 'count', 'max', 'min', 'total', 'top', 'bottom', 'by', 'per', 'each', 'group'}
+        mentioned_columns = []
+        for col in columns:
+            col_lower = col.lower()
+            words = question_lower.split()
+            meaningful_words = [w for w in words if w not in sql_keywords and len(w) >= 3]
+            
+            for word in meaningful_words:
+                if word == col_lower or word in col_lower:
+                    mentioned_columns.append(col)
+                    break
+        
+        mentioned_cat = [col for col in mentioned_columns if col in cat_cols]
+        mentioned_num = [col for col in mentioned_columns if col in num_cols]
+        
+        # Check for grouping pattern
+        has_grouping_keyword = any(word in question_lower for word in ['by', 'per', 'for each', 'group'])
+        has_grouping_pattern = len(mentioned_cat) >= 1 and len(mentioned_num) >= 1
+        
+        # Generate code based on query type
         if "average" in question_lower or "mean" in question_lower:
-            return {
-                "code": "result = df.groupby('category')['value'].mean()\nprint(result)",
-                "code_type": "python",
-                "method": "Python",
-                "success": True,
-                "reasoning": "Generated Python for average calculation"
-            }
+            if has_grouping_keyword or has_grouping_pattern:
+                group_col = mentioned_cat[0] if mentioned_cat else (cat_cols[0] if cat_cols else 'category')
+                agg_col = mentioned_num[0] if mentioned_num else (num_cols[0] if num_cols else 'value')
+                return {
+                    "code": f"result = df.groupby('{group_col}')['{agg_col}'].mean()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": f"Generated Python for average {agg_col} by {group_col}"
+                }
+            elif num_cols:
+                return {
+                    "code": f"result = df['{num_cols[0]}'].mean()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": f"Generated Python for average of {num_cols[0]}"
+                }
+            else:
+                return {
+                    "code": "result = df.groupby('category')['value'].mean()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": "Generated Python for average calculation"
+                }
         elif "sum" in question_lower or "total" in question_lower:
-            return {
-                "code": "result = df.groupby('category')['value'].sum()\nprint(result)",
-                "code_type": "python",
-                "method": "Python",
-                "success": True,
-                "reasoning": "Generated Python for sum calculation"
-            }
+            if has_grouping_keyword or has_grouping_pattern:
+                group_col = mentioned_cat[0] if mentioned_cat else (cat_cols[0] if cat_cols else 'category')
+                agg_col = mentioned_num[0] if mentioned_num else (num_cols[0] if num_cols else 'value')
+                return {
+                    "code": f"result = df.groupby('{group_col}')['{agg_col}'].sum()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": f"Generated Python for sum {agg_col} by {group_col}"
+                }
+            elif num_cols:
+                return {
+                    "code": f"result = df['{num_cols[0]}'].sum()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": f"Generated Python for sum of {num_cols[0]}"
+                }
+            else:
+                return {
+                    "code": "result = df.groupby('category')['value'].sum()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": "Generated Python for sum calculation"
+                }
         elif "count" in question_lower:
-            return {
-                "code": "result = df.groupby('category').size()\nprint(result)",
-                "code_type": "python",
-                "method": "Python",
-                "success": True,
-                "reasoning": "Generated Python for count calculation"
-            }
+            if cat_cols:
+                return {
+                    "code": f"result = df.groupby('{cat_cols[0]}').size()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": f"Generated Python for count by {cat_cols[0]}"
+                }
+            else:
+                return {
+                    "code": "result = df.groupby('category').size()\nprint(result)",
+                    "code_type": "python",
+                    "method": "Python",
+                    "success": True,
+                    "reasoning": "Generated Python for count calculation"
+                }
         else:
             # Default operation
             return {
