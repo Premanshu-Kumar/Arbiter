@@ -66,6 +66,15 @@ class PythonAgent:
         # Enhanced rule-based Python generation with real column names
         question_lower = question.lower()
         
+        # Extract row count from schema
+        row_count = 0
+        for line in schema.split("\n"):
+            if "Rows:" in line:
+                try:
+                    row_count = int(line.split("Rows:")[1].strip())
+                except:
+                    pass
+        
         # Extract column names and types from schema
         columns = []
         cat_cols = []
@@ -178,13 +187,17 @@ class PythonAgent:
                     "reasoning": "Generated Python for count calculation"
                 }
         else:
-            # Default operation
+            # Default operation - show all data for small datasets
+            limit_clause = ""
+            if row_count > 1000:
+                limit_clause = ".head(1000)"
+            
             return {
-                "code": "result = df.head(10)\nprint(result)",
+                "code": f"result = df{limit_clause}\nprint(result)",
                 "code_type": "python",
                 "method": "Python",
                 "success": True,
-                "reasoning": "Generated default Python code"
+                "reasoning": f"Generated default Python code (dataset has {row_count} rows)"
             }
     
     def _build_python_prompt(

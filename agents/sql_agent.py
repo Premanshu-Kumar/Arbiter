@@ -77,6 +77,15 @@ class SQLAgent:
         # Enhanced rule-based SQL generation
         question_lower = question.lower()
         
+        # Extract row count from schema
+        row_count = 0
+        for line in schema.split("\n"):
+            if "Rows:" in line:
+                try:
+                    row_count = int(line.split("Rows:")[1].strip())
+                except:
+                    pass
+        
         # Extract column names and types from schema
         columns = []
         cat_cols = []
@@ -209,12 +218,17 @@ class SQLAgent:
             }
         
         # Default SELECT
+        # Default SELECT - show all data for small datasets
+        limit_clause = ""
+        if row_count > 1000:
+            limit_clause = " LIMIT 1000"
+        
         return {
-            "code": "SELECT * FROM data LIMIT 10",
+            "code": f"SELECT * FROM data{limit_clause}",
             "code_type": "sql",
             "method": "SQL",
             "success": True,
-            "reasoning": "Generated default SELECT query"
+            "reasoning": f"Generated default SELECT query (dataset has {row_count} rows)"
         }
     
     def _build_sql_prompt(
