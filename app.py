@@ -398,6 +398,10 @@ with tab_ask:
                 st.subheader("📊 Results")
                 if isinstance(result["result"], pd.DataFrame):
                     st.dataframe(result["result"], use_container_width=True)
+                    
+                    # Add insight for grouping queries
+                    if "GROUP BY" in result.get("code", ""):
+                        st.info("💡 **Insight:** This result shows aggregated values grouped by a categorical column. The highest value indicates the category with the strongest metric.")
                 else:
                     st.write(result["result"])
 

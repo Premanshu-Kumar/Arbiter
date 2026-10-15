@@ -6,6 +6,7 @@ from agents.ollama_client import OllamaClient
 import config
 import os
 from datetime import datetime
+import pandas as pd
 
 
 class ReportAgent:
@@ -109,6 +110,36 @@ Provide a brief summary of what was analyzed and the key takeaway.
         if error:
             return ["Analysis failed due to execution error", "No insights could be generated"]
         
+        # For DataFrame results, extract insights directly
+        if isinstance(result, pd.DataFrame):
+            insights = []
+            
+            # Check if it's a grouped/aggregated result
+            if len(result.columns) >= 2:
+                # Try to find the highest value
+                numeric_cols = result.select_dtypes(include=['number']).columns
+                if len(numeric_cols) > 0:
+                    agg_col = numeric_cols[0]
+                    cat_cols = [col for col in result.columns if col not in numeric_cols]
+                    
+                    if len(cat_cols) > 0:
+                        cat_col = cat_cols[0]
+                        max_idx = result[agg_col].idxmax()
+                        max_cat = result.loc[max_idx, cat_col]
+                        max_val = result.loc[max_idx, agg_col]
+                        
+                        insights.append(f"Highest value: {max_cat} with {max_val:.2f}")
+                        
+                        # Add total rows insight
+                        insights.append(f"Total categories analyzed: {len(result)}")
+                        
+                        # Add range insight
+                        min_val = result[agg_col].min()
+                        insights.append(f"Value range: {min_val:.2f} to {max_val:.2f}")
+                        
+                        return insights
+        
+        # Fallback to LLM-based insights
         prompt = f"""Generate 3-5 key insights from this data analysis:
 Question: {question}
 Analysis Method: {plan.get('method', 'Unknown')}
