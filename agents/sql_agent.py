@@ -76,29 +76,26 @@ class SQLAgent:
         """Mock SQL generation for testing without Ollama"""
         # Enhanced rule-based SQL generation
         question_lower = question.lower()
-        schema_str = str(schema).lower() if schema is not None else ""
         
-        # Extract column names from schema
+        # Extract column names and types from schema
         columns = []
+        cat_cols = []
+        num_cols = []
+        
         for line in schema.split("\n"):
             if "-" in line and "(" in line:
                 col_name = line.split("-")[0].strip()
                 if col_name is not None and col_name != "" and not col_name.startswith("Column"):
                     columns.append(col_name)
+                    
+                    # Check type indicator
+                    if "[NUMERIC]" in line.upper():
+                        num_cols.append(col_name)
+                    elif "[CATEGORICAL]" in line.upper():
+                        cat_cols.append(col_name)
         
         # Detect mentioned columns in question
         mentioned_columns = [col for col in columns if col.lower() in question_lower]
-        
-        # Separate categorical and numeric columns based on schema
-        cat_cols = []
-        num_cols = []
-        for col in columns:
-            if col.lower() in schema_str:
-                col_line = [line for line in schema.split("\n") if col in line][0]
-                if any(dtype in col_line.lower() for dtype in ['int', 'float', 'double', 'numeric']):
-                    num_cols.append(col)
-                else:
-                    cat_cols.append(col)
         
         # Handle grouping/aggregation queries
         if any(word in question_lower for word in ['by', 'per', 'for each', 'group']):
@@ -144,20 +141,20 @@ class SQLAgent:
         if "average" in question_lower or "mean" in question_lower:
             if mentioned_columns:
                 numeric_mentioned = [col for col in mentioned_columns if col in num_cols]
-                if numeric_mentioned:
-                    if len(numeric_mentioned) >= 2 and len(cat_cols) >= 1:
-                        # Try to detect grouping pattern
-                        for col in mentioned_columns:
-                            if col in cat_cols:
-                                group_col = col
-                                agg_col = [c for c in numeric_mentioned if c != group_col][0]
-                                return {
-                                    "code": f"SELECT {group_col}, AVG({agg_col}) as avg_{agg_col} FROM data GROUP BY {group_col}",
-                                    "code_type": "sql",
-                                    "method": "SQL",
-                                    "success": True,
-                                    "reasoning": f"Generated SQL for average {agg_col} by {group_col}"
-                                }
+                cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
+                
+                if len(numeric_mentioned) >= 1 and len(cat_mentioned) >= 1:
+                    # Group by categorical, aggregate numeric
+                    group_col = cat_mentioned[0]
+                    agg_col = numeric_mentioned[0]
+                    return {
+                        "code": f"SELECT {group_col}, AVG({agg_col}) as avg_{agg_col} FROM data GROUP BY {group_col}",
+                        "code_type": "sql",
+                        "method": "SQL",
+                        "success": True,
+                        "reasoning": f"Generated SQL for average {agg_col} by {group_col}"
+                    }
+                elif len(numeric_mentioned) >= 1:
                     return {
                         "code": f"SELECT AVG({', '.join(numeric_mentioned)}) as avg_value FROM data",
                         "code_type": "sql",
@@ -176,19 +173,19 @@ class SQLAgent:
         elif "sum" in question_lower or "total" in question_lower:
             if mentioned_columns:
                 numeric_mentioned = [col for col in mentioned_columns if col in num_cols]
-                if numeric_mentioned:
-                    if len(numeric_mentioned) >= 2 and len(cat_cols) >= 1:
-                        for col in mentioned_columns:
-                            if col in cat_cols:
-                                group_col = col
-                                agg_col = [c for c in numeric_mentioned if c != group_col][0]
-                                return {
-                                    "code": f"SELECT {group_col}, SUM({agg_col}) as total_{agg_col} FROM data GROUP BY {group_col}",
-                                    "code_type": "sql",
-                                    "method": "SQL",
-                                    "success": True,
-                                    "reasoning": f"Generated SQL for sum {agg_col} by {group_col}"
-                                }
+                cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
+                
+                if len(numeric_mentioned) >= 1 and len(cat_mentioned) >= 1:
+                    group_col = cat_mentioned[0]
+                    agg_col = numeric_mentioned[0]
+                    return {
+                        "code": f"SELECT {group_col}, SUM({agg_col}) as total_{agg_col} FROM data GROUP BY {group_col}",
+                        "code_type": "sql",
+                        "method": "SQL",
+                        "success": True,
+                        "reasoning": f"Generated SQL for sum {agg_col} by {group_col}"
+                    }
+                elif len(numeric_mentioned) >= 1:
                     return {
                         "code": f"SELECT SUM({', '.join(numeric_mentioned)}) as total_value FROM data",
                         "code_type": "sql",
@@ -207,18 +204,17 @@ class SQLAgent:
         elif "count" in question_lower:
             if mentioned_columns:
                 if len(mentioned_columns) >= 2:
-                    # Try to detect grouping pattern
-                    for col in mentioned_columns:
-                        if col in cat_cols:
-                            group_col = col
-                            other_col = [c for c in mentioned_columns if c != group_col][0]
-                            return {
-                                "code": f"SELECT {group_col}, COUNT({other_col}) as count FROM data GROUP BY {group_col}",
-                                "code_type": "sql",
-                                "method": "SQL",
-                                "success": True,
-                                "reasoning": f"Generated SQL for count {other_col} by {group_col}"
-                            }
+                    cat_mentioned = [col for col in mentioned_columns if col in cat_cols]
+                    if len(cat_mentioned) >= 1:
+                        group_col = cat_mentioned[0]
+                        other_col = [c for c in mentioned_columns if c != group_col][0]
+                        return {
+                            "code": f"SELECT {group_col}, COUNT({other_col}) as count FROM data GROUP BY {group_col}",
+                            "code_type": "sql",
+                            "method": "SQL",
+                            "success": True,
+                            "reasoning": f"Generated SQL for count {other_col} by {group_col}"
+                        }
                 return {
                     "code": f"SELECT {mentioned_columns[0]}, COUNT(*) as count FROM data GROUP BY {mentioned_columns[0]}",
                     "code_type": "sql",

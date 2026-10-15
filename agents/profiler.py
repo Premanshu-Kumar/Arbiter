@@ -90,13 +90,16 @@ class DataProfiler:
         return profile
     
     def _generate_schema_string(self, df: pd.DataFrame) -> str:
-        """Generate a readable schema string"""
+        """Generate a readable schema string with clear type indicators"""
         schema_lines = [f"Columns: {len(df.columns)}", f"Rows: {len(df)}", "\nColumn Details:"]
         
         for col in df.columns:
             dtype = str(df[col].dtype)
             null_pct = (df[col].isnull().sum() / len(df)) * 100
-            schema_lines.append(f"  - {col} ({dtype}) - {null_pct:.1f}% null")
+            
+            # Add type indicator for easier parsing
+            type_indicator = "NUMERIC" if pd.api.types.is_numeric_dtype(df[col]) else "CATEGORICAL"
+            schema_lines.append(f"  - {col} ({dtype}) [{type_indicator}] - {null_pct:.1f}% null")
         
         return "\n".join(schema_lines)
     
