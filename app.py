@@ -187,13 +187,105 @@ with tab_ask:
     else:
         if st.session_state.joined_df is not None:
             st.info("🔗 Using **joined dataset** from Multi-File Join tab.")
-
+        
+        # Show dataset info
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Rows", f"{len(active_df):,}")
+        col2.metric("Columns", len(active_df.columns))
+        col3.metric("History", f"{len(st.session_state.question_history)}")
+        
+        st.markdown("---")
+        
+        # Quick Actions Section
+        st.subheader("⚡ Quick Actions")
+        
+        # Get column names for quick actions
+        columns = active_df.columns.tolist()
+        numeric_cols = active_df.select_dtypes(include=['number']).columns.tolist()
+        categorical_cols = active_df.select_dtypes(include=['object', 'category']).columns.tolist()
+        
+        # Quick action buttons
+        quick_cols = st.columns(4)
+        with quick_cols[0]:
+            if st.button("📊 Show Summary", use_container_width=True):
+                st.session_state["quick_action"] = "summary"
+        with quick_cols[1]:
+            if st.button("📈 Correlation", use_container_width=True, disabled=len(numeric_cols) < 2):
+                st.session_state["quick_action"] = "correlation"
+        with quick_cols[2]:
+            if st.button("🔍 Show Head", use_container_width=True):
+                st.session_state["quick_action"] = "head"
+        with quick_cols[3]:
+            if st.button("🗑️ Clear All", use_container_width=True):
+                st.session_state.question_history = []
+                st.session_state.workflow_result = None
+                st.session_state["quick_action"] = None
+                st.rerun()
+        
+        # Column-specific quick actions
+        if numeric_cols:
+            st.markdown("**Quick Analysis for Numeric Columns:**")
+            quick_num_cols = st.columns(min(4, len(numeric_cols)))
+            for i, col in enumerate(quick_num_cols):
+                if i < len(numeric_cols):
+                    with quick_num_cols[i]:
+                        if st.button(f"📉 {col}", use_container_width=True, key=f"quick_{col}"):
+                            st.session_state["quick_action"] = f"analyze_{col}"
+        
+        if categorical_cols:
+            st.markdown("**Quick Analysis for Categorical Columns:**")
+            quick_cat_cols = st.columns(min(4, len(categorical_cols)))
+            for i, col in enumerate(quick_cat_cols):
+                if i < len(categorical_cols):
+                    with quick_cat_cols[i]:
+                        if st.button(f"📊 {col}", use_container_width=True, key=f"quick_cat_{col}"):
+                            st.session_state["quick_action"] = f"count_{col}"
+        
+        st.markdown("---")
+        
+        # Suggested Questions
+        st.subheader("💡 Suggested Questions")
+        suggestions = []
+        
+        if len(numeric_cols) >= 2:
+            suggestions.append(f"What is the correlation between {numeric_cols[0]} and {numeric_cols[1]}?")
+        if len(categorical_cols) >= 1:
+            suggestions.append(f"Count of {categorical_cols[0]} by category")
+        if len(numeric_cols) >= 1:
+            suggestions.append(f"What is the average {numeric_cols[0]}?")
+        if len(categorical_cols) >= 1 and len(numeric_cols) >= 1:
+            suggestions.append(f"Average {numeric_cols[0]} by {categorical_cols[0]}")
+        
+        if suggestions:
+            selected_suggestion = st.selectbox("Or try one of these:", [""] + suggestions)
+            if selected_suggestion:
+                st.session_state["suggested_question"] = selected_suggestion
+        
+        st.markdown("---")
+        
+        # Main Question Input
+        st.subheader("🤖 Ask Your Question")
+        
+        # Use suggested question if selected
+        default_question = st.session_state.get("suggested_question", "")
+        if default_question:
+            st.info(f"💡 Selected: {default_question}")
+        
         question = st.text_input(
             "Your question:",
             placeholder="e.g., What is the average revenue by category?",
+            value=default_question,
             key="question_input",
         )
-
+        
+        # Auto-complete for column names
+        if columns:
+            st.markdown("**Available columns:**")
+            col_tags = " | ".join([f"`{col}`" for col in columns[:10]])
+            if len(columns) > 10:
+                col_tags += f" ... and {len(columns) - 10} more"
+            st.markdown(col_tags)
+        
         col1, col2 = st.columns([1, 1])
         with col1:
             analyze = st.button("🚀 Analyze", type="primary", use_container_width=True)
@@ -201,8 +293,69 @@ with tab_ask:
             if st.button("🗑️ Clear History", use_container_width=True):
                 st.session_state.question_history = []
                 st.session_state.workflow_result = None
+                st.session_state["quick_action"] = None
+                st.session_state["suggested_question"] = None
                 st.rerun()
-
+        
+        # Handle Quick Actions
+        if st.session_state.get("quick_action") == "summary":
+            with st.spinner("Generating summary..."):
+                st.subheader("📊 Dataset Summary")
+                st.dataframe(active_df.describe(), use_container_width=True)
+                st.session_state["quick_action"] = None
+        
+        elif st.session_state.get("quick_action") == "correlation":
+            with st.spinner("Calculating correlation..."):
+                st.subheader("🔥 Correlation Matrix")
+                corr = active_df[numeric_cols].corr()
+                fig = px.imshow(
+                    corr,
+                    text_auto=".2f",
+                    color_continuous_scale="RdBu_r",
+                    zmin=-1, zmax=1,
+                    title="Correlation Matrix",
+                    aspect="auto",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                st.session_state["quick_action"] = None
+        
+        elif st.session_state.get("quick_action") == "head":
+            st.subheader("👁️ First 10 Rows")
+            st.dataframe(active_df.head(10), use_container_width=True)
+            st.session_state["quick_action"] = None
+        
+        elif st.session_state.get("quick_action", "").startswith("analyze_"):
+            col = st.session_state["quick_action"].replace("analyze_", "")
+            with st.spinner(f"Analyzing {col}..."):
+                st.subheader(f"📊 Analysis of {col}")
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Mean", f"{active_df[col].mean():.2f}")
+                c2.metric("Max", f"{active_df[col].max():.2f}")
+                c3.metric("Min", f"{active_df[col].min():.2f}")
+                
+                fig = px.histogram(active_df, x=col, title=f"Distribution of {col}")
+                st.plotly_chart(fig, use_container_width=True)
+                st.session_state["quick_action"] = None
+        
+        elif st.session_state.get("quick_action", "").startswith("count_"):
+            col = st.session_state["quick_action"].replace("count_", "")
+            with st.spinner(f"Counting {col}..."):
+                st.subheader(f"📊 Count of {col}")
+                value_counts = active_df[col].value_counts()
+                
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.dataframe(value_counts.to_frame(), use_container_width=True)
+                with c2:
+                    fig = px.bar(
+                        x=value_counts.index,
+                        y=value_counts.values,
+                        title=f"Distribution of {col}",
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                st.session_state["quick_action"] = None
+        
+        # Handle regular question analysis
         if analyze and question:
             with st.spinner("🤖 Running multi-agent analysis..."):
                 try:
@@ -217,6 +370,7 @@ with tab_ask:
                     )
                     st.session_state.workflow_result = result
                     st.session_state.question_history.append({"question": question, "result": result})
+                    st.session_state["suggested_question"] = None
                     workflow.close()
                     st.success("✅ Analysis complete!")
                 except Exception as e:
@@ -224,9 +378,11 @@ with tab_ask:
                     import traceback
                     st.code(traceback.format_exc())
 
+        # Display Results
         if st.session_state.workflow_result:
             result = st.session_state.workflow_result
 
+            st.markdown("---")
             st.subheader("🔍 Agent Trace")
             tc1, tc2, tc3, tc4 = st.columns(4)
             tc1.metric("Agent", result.get("selected_agent", "N/A"))
@@ -235,8 +391,8 @@ with tab_ask:
             tc4.metric("Latency", f"{result.get('latency_ms', 0):.0f}ms")
 
             if result.get("code"):
-                st.subheader("💻 Generated Code")
-                st.code(result["code"], language=result.get("code_type", "python"))
+                with st.expander("💻 Generated Code"):
+                    st.code(result["code"], language=result.get("code_type", "python"))
 
             if result.get("result") is not None:
                 st.subheader("📊 Results")
@@ -264,6 +420,38 @@ with tab_ask:
                         file_name="report.html",
                         mime="text/html",
                     )
+        
+        # Display History
+        if st.session_state.question_history:
+            st.markdown("---")
+            st.subheader("📜 Question History")
+            
+            # Search and filter
+            search_term = st.text_input("🔍 Search history:", key="history_search")
+            
+            # Display history with option to rerun
+            for idx, item in enumerate(reversed(st.session_state.question_history)):
+                with st.expander(f"Q: {item['question'][:50]}...", expanded=False):
+                    st.markdown(f"**Question:** {item['question']}")
+                    
+                    if item.get("result"):
+                        res = item["result"]
+                        st.markdown(f"**Agent:** {res.get('selected_agent', 'N/A')}")
+                        st.markdown(f"**Confidence:** {res.get('confidence', 0):.2f}")
+                        
+                        if res.get("result") is not None:
+                            if isinstance(res["result"], pd.DataFrame):
+                                st.dataframe(res["result"].head(), use_container_width=True)
+                            else:
+                                st.write(res["result"][:500] if isinstance(res["result"], str) else res["result"])
+                        
+                        if st.button(f"🔄 Rerun Analysis", key=f"rerun_{idx}"):
+                            st.session_state["suggested_question"] = item["question"]
+                            st.rerun()
+                    
+                    if st.button(f"🗑️ Delete", key=f"delete_{idx}"):
+                        del st.session_state.question_history[-(idx + 1)]
+                        st.rerun()
 
 # ══════════════════════════════════════════════════════════════════════
 #  TAB 3 — Multi-File Join (Phase 7)
