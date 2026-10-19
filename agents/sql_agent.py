@@ -77,15 +77,6 @@ class SQLAgent:
         # Enhanced rule-based SQL generation
         question_lower = question.lower()
         
-        # Extract row count from schema
-        row_count = 0
-        for line in schema.split("\n"):
-            if "Rows:" in line:
-                try:
-                    row_count = int(line.split("Rows:")[1].strip())
-                except:
-                    pass
-        
         # Extract column names and types from schema
         columns = []
         cat_cols = []
@@ -218,17 +209,13 @@ class SQLAgent:
             }
         
         # Default SELECT
-        # Default SELECT - show all data for small datasets
-        limit_clause = ""
-        if row_count > 1000:
-            limit_clause = " LIMIT 1000"
-        
+        # Default SELECT - show all data
         return {
-            "code": f"SELECT * FROM data{limit_clause}",
+            "code": "SELECT * FROM data",
             "code_type": "sql",
             "method": "SQL",
             "success": True,
-            "reasoning": f"Generated default SELECT query (dataset has {row_count} rows)"
+            "reasoning": "Generated default SELECT query"
         }
     
     def _build_sql_prompt(
@@ -261,7 +248,7 @@ Important Rules:
 7. Use WHERE for filtering
 8. Use DATE_TRUNC for time series analysis
 9. Include column aliases for clarity
-10. Limit results to 1000 rows for performance
+10. Return all rows (no LIMIT) unless specifically requested
 
 Generate only the SQL query, no explanations.
 """
