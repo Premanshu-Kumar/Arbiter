@@ -324,7 +324,7 @@ with tab_ask:
             st.dataframe(active_df.head(10), use_container_width=True)
             st.session_state["quick_action"] = None
         
-        elif st.session_state.get("quick_action", "").startswith("analyze_"):
+        elif st.session_state.get("quick_action") and st.session_state.get("quick_action", "").startswith("analyze_"):
             col = st.session_state["quick_action"].replace("analyze_", "")
             with st.spinner(f"Analyzing {col}..."):
                 st.subheader(f"📊 Analysis of {col}")
