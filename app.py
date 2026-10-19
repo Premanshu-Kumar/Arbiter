@@ -171,12 +171,8 @@ with tab_upload:
             # Auto-run EDA
             st.markdown("---")
             st.subheader("🔍 Automatic Exploratory Data Analysis")
-            run_auto_eda = st.button("🚀 Run Auto EDA", type="primary")
             
             if auto_eda:
-                run_auto_eda = True
-            
-            if run_auto_eda:
                 with st.spinner("Running exploratory data analysis..."):
                     eda_agent = AutoEDAAgent()
                     report = eda_agent.run_eda(df, uploaded_file.name)
