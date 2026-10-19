@@ -156,6 +156,8 @@ with tab_upload:
 
             # Auto-save version
             auto_save = st.checkbox("Auto-save as a dataset version", value=True)
+            auto_eda = st.checkbox("Auto-run EDA on upload", value=True)
+            
             if auto_save:
                 vm: DatasetVersionManager = st.session_state.version_manager
                 dataset_name = os.path.splitext(uploaded_file.name)[0]
@@ -165,6 +167,100 @@ with tab_upload:
                     description=f"Uploaded via UI — {uploaded_file.name}",
                 )
                 st.info(f"💾 Saved as version **{version.version_id}** for dataset `{dataset_name}`")
+            
+            # Auto-run EDA
+            st.markdown("---")
+            st.subheader("🔍 Automatic Exploratory Data Analysis")
+            run_auto_eda = st.button("🚀 Run Auto EDA", type="primary")
+            
+            if auto_eda:
+                run_auto_eda = True
+            
+            if run_auto_eda:
+                with st.spinner("Running exploratory data analysis..."):
+                    eda_agent = AutoEDAAgent()
+                    report = eda_agent.run_eda(df, uploaded_file.name)
+                    st.session_state.eda_report = report
+                    
+                    # Display EDA results
+                    r = report
+                    ov = r["overview"]
+                    
+                    # Metrics row
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric("Rows", f"{ov['rows']:,}")
+                    c2.metric("Columns", ov["columns"])
+                    c3.metric("Memory", f"{ov['memory_mb']} MB")
+                    c4.metric("Missing %", f"{r['missing_values']['total_missing_pct']:.1f}%")
+                    
+                    # Insights
+                    st.subheader("💡 Key Insights")
+                    for insight in r["insights"]:
+                        st.markdown(f"- {insight}")
+                    
+                    st.subheader("✅ Recommendations")
+                    for rec in r["recommendations"]:
+                        st.markdown(f"- {rec}")
+                    
+                    # Numeric stats table
+                    if r["numeric_analysis"]:
+                        st.subheader("📊 Numeric Columns")
+                        num_df = pd.DataFrame(r["numeric_analysis"])
+                        display_cols = [c for c in ["column", "mean", "std", "min", "max", "outlier_pct", "skewness"] if c in num_df.columns]
+                        st.dataframe(num_df[display_cols].round(3), use_container_width=True)
+                    
+                    # Categorical stats
+                    if r["categorical_analysis"]:
+                        st.subheader("🏷️ Categorical Columns")
+                        cat_df = pd.DataFrame(r["categorical_analysis"])
+                        display_cols = [c for c in ["column", "unique_count", "unique_pct", "most_frequent", "most_frequent_pct", "entropy"] if c in cat_df.columns]
+                        st.dataframe(cat_df[display_cols].round(3), use_container_width=True)
+                    
+                    # Correlation heatmap
+                    corr = r["correlation_analysis"]
+                    if corr.get("available") and corr.get("matrix"):
+                        st.subheader("🔥 Correlation Heatmap")
+                        matrix_data = corr["matrix"]
+                        corr_df = pd.DataFrame(matrix_data)
+                        fig = px.imshow(
+                            corr_df,
+                            text_auto=".2f",
+                            color_continuous_scale="RdBu_r",
+                            zmin=-1, zmax=1,
+                            title="Correlation Matrix",
+                            aspect="auto",
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Download EDA report
+                    st.markdown("---")
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.download_button(
+                            "📄 Download EDA Report (Markdown)",
+                            "\n".join([
+                                f"# EDA Report for {uploaded_file.name}",
+                                f"\nGenerated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                                f"\n## Overview",
+                                f"- Rows: {ov['rows']:,}",
+                                f"- Columns: {ov['columns']}",
+                                f"- Memory: {ov['memory_mb']} MB",
+                                f"- Missing: {r['missing_values']['total_missing_pct']:.1f}%",
+                                f"\n## Key Insights",
+                                "\n".join([f"- {insight}" for insight in r["insights"]]),
+                                f"\n## Recommendations",
+                                "\n".join([f"- {rec}" for rec in r["recommendations"]])
+                            ]),
+                            file_name=f"eda_report_{uploaded_file.name}.md",
+                            mime="text/markdown",
+                        )
+                    with c2:
+                        st.download_button(
+                            "📊 Download Dataset (CSV)",
+                            df.to_csv(index=False).encode('utf-8'),
+                            file_name=f"{uploaded_file.name.replace('.xlsx', '.csv').replace('.xls', '.csv')}",
+                            mime="text/csv",
+                        )
 
         except Exception as e:
             st.error(f"Error: {e}")
