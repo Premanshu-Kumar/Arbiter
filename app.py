@@ -45,6 +45,7 @@ defaults = {
     "joined_df": None,
     "joined_profile": None,
     "eda_report": None,
+    "last_eda_file": None,
     "version_manager": DatasetVersionManager(),
     "perf_dashboard": ModelPerformanceDashboard(),
 }
@@ -153,6 +154,16 @@ with tab_upload:
             ]
             cols_df.columns = ["Column", "Type", "Null #", "Null %", "Unique"]
             st.dataframe(cols_df, use_container_width=True)
+            
+            # Download dataset (always visible)
+            st.markdown("---")
+            st.subheader("📥 Download Dataset")
+            st.download_button(
+                "📊 Download Dataset (CSV)",
+                df.to_csv(index=False).encode('utf-8'),
+                file_name=f"{uploaded_file.name.replace('.xlsx', '.csv').replace('.xls', '.csv')}",
+                mime="text/csv",
+            )
 
             # Auto-save version
             auto_save = st.checkbox("Auto-save as a dataset version", value=True)
@@ -171,8 +182,12 @@ with tab_upload:
             # Auto-run EDA
             st.markdown("---")
             st.subheader("🔍 Automatic Exploratory Data Analysis")
+            run_auto_eda = st.button("🚀 Run Auto EDA", type="primary")
             
-            if auto_eda:
+            # Trigger auto-EDA if checkbox is checked and file just uploaded
+            should_run_eda = auto_eda and uploaded_file.name != st.session_state.get("last_eda_file", "")
+            
+            if should_run_eda or run_auto_eda:
                 with st.spinner("Running exploratory data analysis..."):
                     eda_agent = AutoEDAAgent()
                     report = eda_agent.run_eda(df, uploaded_file.name)
@@ -230,6 +245,7 @@ with tab_upload:
                     
                     # Download EDA report
                     st.markdown("---")
+                    st.subheader("📥 Downloads")
                     c1, c2 = st.columns(2)
                     with c1:
                         st.download_button(
@@ -257,6 +273,9 @@ with tab_upload:
                             file_name=f"{uploaded_file.name.replace('.xlsx', '.csv').replace('.xls', '.csv')}",
                             mime="text/csv",
                         )
+                    
+                    # Save EDA file reference
+                    st.session_state["last_eda_file"] = uploaded_file.name
 
         except Exception as e:
             st.error(f"Error: {e}")
