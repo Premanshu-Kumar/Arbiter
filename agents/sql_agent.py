@@ -208,7 +208,6 @@ class SQLAgent:
                 "reasoning": f"Generated SQL for top values by {num_cols[0]}"
             }
         
-        # Default SELECT
         # Default SELECT - show all data
         return {
             "code": "SELECT * FROM data",
